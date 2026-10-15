@@ -20,7 +20,6 @@ The dashboard imports native Lua SavedVariables locally, without a server or con
 
 - **[LibSets](https://www.esoui.com/downloads/info2241-LibSets.html)**
 
-Without matching LibSets data, some types and crafting requirements appear as unclassified or unknown. Crafting eligibility checks research counts only; materials, styles, station access, and crafting skill still apply.
 
 ## Installation
 This is currently beta and is not published in minion or anywhere.  Apologies for the manual install.
