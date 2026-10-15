@@ -3,36 +3,34 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>ESO · Set Collection</title>
 <style>
-/* Colors, fonts and sizes are all set in :root below. Change them there and the rest of the page follows. */
+/* Theme and layout */
 :root {
   color-scheme: dark;
 
   --font-body: system-ui, sans-serif;
   --font-heading: Georgia, serif;
   --font-size-base: 16px;
-  --font-size-title: 36px;     /* shrinks to 28px on phones */
+  --font-size-title: 36px;     
   --font-size-small: 14px;
 
-  /* backgrounds, darkest to lightest */
   --color-page: #141414;
-  --color-panel-deep: #181818; /* piece rows, target rows */
-  --color-panel: #1e1e1e;      /* set rows, panels */
-  --color-panel-raised: #242424; /* summary cards */
-  --color-control: #2a2a2a;    /* buttons, dropdowns, inputs */
+  --color-panel-deep: #181818; 
+  --color-panel: #1e1e1e;      
+  --color-panel-raised: #242424; 
+  --color-control: #2a2a2a;    
   --color-control-hover: #383838;
   --color-badge: #333333;
-  --color-panel-card-top: #2b2b2b; /* top of the summary cards' gradient */
-  --color-panel-hover: #242424;    /* set row under the mouse */
-  --color-panel-open: #272727;     /* set row that is open */
+  --color-panel-card-top: #2b2b2b; 
+  --color-panel-hover: #242424;    
+  --color-panel-open: #272727;     
 
   --color-text: #ececec;
   --color-text-muted: #b5b5b5;
   --color-text-faint: #adadad;
   --color-control-text: #f2f2f2;
 
-  /* gold */
-  --color-accent: #e8c98d;     /* links, focus ring, key numbers */
-  --color-accent-soft: #d9b875; /* small header label, group headings */
+  --color-accent: #e8c98d;     
+  --color-accent-soft: #d9b875; 
   --color-accent-bar: #d4b575;
 
   --color-border: #353535;
@@ -40,40 +38,35 @@
   --color-border-control: #666666;
   --color-border-card: #404040;
   --color-border-hover: #5a5a5a;
-  --color-text-bonus: #cfcfcf;     /* plain words in set bonuses */
+  --color-text-bonus: #cfcfcf;     
 
   --color-unlocked: #9cdbb8;
   --color-missing: #f4b3a3;
   --color-error: #ffb8b8;
 
-  /* glow behind the header, and the gold gradients (title, import button, progress bars) */
   --color-glow: #222222;
   --gradient-gold: linear-gradient(90deg, #b8934f, #f0d9a6 50%, #b8934f);
   --gradient-gold-soft: linear-gradient(90deg, #c9a45e, #e8c98d);
 
-  /* colors for the numbers and effects in set bonus text */
   --color-stat-health: #f08a7e;
   --color-stat-stamina: #7fd69a;
   --color-stat-magicka: #6cb4ee;
   --color-stat-ultimate: #c39af2;
-  --color-stat-other: #f0a36b;    /* armor, damage, resistance, penetration */
-  --color-stat-buff: #f2d36b;     /* Minor and Major buffs */
+  --color-stat-other: #f0a36b;    
+  --color-stat-buff: #f2d36b;     
 
-  /* stripe and badge color for each set type */
   --color-type-dungeon: #6aa9d8;
   --color-type-trial: #a98ee0;
   --color-type-other: #a0a0a0;
   --color-type-crafted: #cf9461;
 
-  --control-height: 46px;      /* buttons, dropdowns, search box */
+  --control-height: 46px;      
   --radius: 6px;
   --page-max-width: 1250px;
-  --sidebar-width: 260px;      /* left column: filters and links */
-  --page-padding: 32px;        /* 16px on phones */
+  --sidebar-width: 260px;      
+  --page-padding: 32px;        
 }
 
-
-/* page, header, shared controls */
 body { max-width: var(--page-max-width); margin: auto; padding: var(--page-padding); font: var(--font-size-base)/1.5 var(--font-body); color: var(--color-text);
   background: radial-gradient(900px 420px at 50% -80px, var(--color-glow), transparent 70%) no-repeat, var(--color-page); }
 h1 { font: var(--font-size-title)/1.15 var(--font-heading); margin: 8px 0; letter-spacing: .01em; color: #f6e7c4;
@@ -91,26 +84,21 @@ a { color: var(--color-accent); }
 button, .file, select, input { background: var(--color-control); color: var(--color-control-text); border: 1px solid var(--color-border-control); border-radius: var(--radius); padding: 10px; font: inherit; }
 button, .file, summary { cursor: pointer; }
 @media (prefers-reduced-motion: no-preference) { button:hover { background: var(--color-control-hover); } }
-/* The gold focus ring shows for keyboard use only (focus-visible), so clicking a row with the mouse doesn't leave a box behind. */
+
 a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 summary:focus:not(:focus-visible), a:focus:not(:focus-visible), button:focus:not(:focus-visible) { outline: none; }
 
-/* the import button is a label around a hidden file input */
 .file, #demo { box-sizing: border-box; height: var(--control-height); margin: 0 8px 8px 0; display: inline-flex; align-items: center; justify-content: center; }
 .file { position: relative; padding: 0 20px; border-color: #e8c98d; background: var(--gradient-gold-soft); color: #1a1405; font-weight: 700; }
 .file:hover { filter: brightness(1.08); }
 .file input { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; opacity: 0; cursor: pointer; padding: 0; border: 0; }
 .file:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 
-/* the four summary numbers */
-/* Sticky header: stays at the top of the middle column while you scroll. The solid background hides what scrolls under it.
-   margin-top plus padding-top is 25px so the first box lines up with the filters and links boxes. */
 .cards { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 15px 0 15px; padding: 10px 0; background: var(--color-page); }
-.cards:empty { display: none; } /* before any data loads, so the other columns still line up */
+.cards:empty { display: none; } 
 .card { padding: 12px 14px; background: linear-gradient(180deg, var(--color-panel-card-top), var(--color-panel-raised)); border: 1px solid var(--color-border-card); border-top: 3px solid #c9a45e; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
 .big { font: 26px/1.2 var(--font-heading); color: var(--color-accent); }
 
-/* next best targets panel */
 #targets { background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 8px; margin: 0 0 22px; }
 #targets[hidden] { display: none; }
 .targetsBody { padding: 0 20px 20px; }
@@ -122,19 +110,16 @@ summary:focus:not(:focus-visible), a:focus:not(:focus-visible), button:focus:not
 #targetList .need { color: var(--color-accent); font-weight: 650; }
 #targetList button { height: 36px; padding: 4px 12px; }
 
-/* search and filter bar */
-/* the filters box: a stack of labeled controls */
 .tools { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 10px; }
 .tools label, .tools .field { display: flex; flex-direction: column; font-size: 12px; gap: 4px; }
 .tools input, .tools select, .tools button { box-sizing: border-box; width: 100%; height: var(--control-height); font-size: 16px; }
 .tools .backToTop { display: block; text-align: center; padding: 8px 0; font-weight: 650; }
-/* type chips: one-click filter buttons; aria-pressed="true" marks the active one */
+
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .tools .chip { width: auto; height: 34px; padding: 0 12px; border-radius: 17px; font-size: 14px; }
 .tools .chip[aria-pressed="true"] { background: var(--color-accent-bar); border-color: var(--color-accent-bar); color: #1a1405; font-weight: 650; }
 
-/* set list. data-type on a row picks the stripe and badge color. */
-#count { margin-top: 25px; } /* before data loads this is the first thing in the right column, so it matches the sidebar's top */
+#count { margin-top: 25px; } 
 #results { min-height: 120px; }
 #empty { padding: 28px 32px; border: 1px dashed var(--color-border-control); border-radius: 8px; }
 #empty h2 { margin: 0 0 10px; font: 22px var(--font-heading); color: var(--color-accent); }
@@ -155,23 +140,23 @@ summary { padding: 18px; display: flex; gap: 12px; align-items: center; flex-wra
 .progress::-webkit-progress-bar { background: var(--color-badge); }
 .progress::-webkit-progress-value { background: var(--gradient-gold-soft); border-radius: 4px; }
 .progress::-moz-progress-bar { background: var(--gradient-gold-soft); border-radius: 4px; }
-/* arrow on every expandable row (set rows, targets, research); it turns when the section is open */
+
 details > summary::before { content: "▸"; flex: none; display: inline-block; color: var(--color-accent-soft); }
 details[open] > summary::before { transform: rotate(90deg); }
 @media (prefers-reduced-motion: no-preference) { details > summary::before { transition: transform .15s; } }
 .badge svg { width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; fill: none; stroke: var(--type-color, currentColor); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-/* finished sets: green bar and a check mark in the text */
+
 details.set.complete { background: var(--color-panel-deep); }
 .doneTag { color: var(--color-unlocked); font-weight: 650; }
 details.set.complete .progress::-webkit-progress-value { background: var(--color-unlocked); }
 details.set.complete .progress::-moz-progress-bar { background: var(--color-unlocked); }
-/* the open set: info (classification, link, bonuses) on the left, pieces on the right */
+
 .setBody { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr); gap: 20px; padding: 0 20px 20px; }
 .setBody .bonus, .setBody .link { margin: 0 0 12px; }
 .pieceGroup { margin: 0 0 6px; font: 600 13px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent-soft); }
 .pieceGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 14px; }
 @media (max-width: 700px) { .setBody { grid-template-columns: minmax(0, 1fr); } }
-/* collection progress bar inside the sticky summary */
+
 .overall { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--color-badge); overflow: hidden; }
 .overallBar { height: 100%; background: var(--gradient-gold-soft); }
 .piece { padding: 10px 12px; background: var(--color-panel-deep); border-left: 3px solid var(--color-border-control); border-radius: 4px; }
@@ -189,11 +174,8 @@ details.set.complete .progress::-moz-progress-bar { background: var(--color-unlo
 .stat-other { color: var(--color-stat-other); }
 .stat-buff { color: var(--color-stat-buff); font-weight: 650; }
 
-/* page body: main content plus the links panel. To put the links on the left, swap the two columns
-   below and add "order: -1" to .links. */
 .layout { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); gap: 24px; align-items: start; }
-/* The left column holds the filters and the links. It stays in view while you scroll; if it is taller than the
-   window it scrolls on its own. The padding and negative margins keep keyboard focus rings from being clipped. */
+
 .sidebar { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 5px; margin: 20px -5px 0; }
 .links { padding: 16px 18px; background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 8px; }
 .links h2 { margin: 0 0 8px; font-size: 18px; }
@@ -201,11 +183,10 @@ details.set.complete .progress::-moz-progress-bar { background: var(--color-unlo
 .links li { padding: 8px 0; border-top: 1px solid var(--color-border); }
 .links li:first-child { border-top: 0; }
 .links a { display: block; font-weight: 650; }
-/* narrow screens: one column (filters and links, then content). The summary header still sticks. */
+
 @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } .sidebar { position: static; max-height: none; overflow: visible; margin: 0; padding: 0; } .cards { margin-top: 0; } }
 .link { margin: 0 20px 15px; display: inline-block; }
 
-/* research table and footer */
 #researchPanel { padding: 15px; background: var(--color-panel); overflow: auto; }
 #researchPanel table { width: 100%; border-collapse: collapse; }
 td, th { text-align: left; border-bottom: 1px solid var(--color-border); padding: 9px; }
@@ -217,7 +198,7 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
 }
 </style></head><body>
 
-<!-- Header: change the label, title and tagline text here. The import button needs its ids (file, demo) left alone. -->
+<!-- Page header and data import -->
 <header id="top">
   <div class="eyebrow">THE ELDER SCROLLS ONLINE · ACCOUNT COLLECTION</div>
   <h1>Your next missing piece.</h1>
@@ -227,15 +208,13 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
   <p class="muted">Open locally. Your file stays in this browser tab. Export in ESO with /setexport, wait for “Ready”, then /reloadui or log out.</p>
 </header>
 
-<!-- Shows the account, server, character and any import error. It sits above the columns so they all start at the same height. -->
 <div id="status" role="status" aria-live="polite">Import SetCollectionExporter.lua to begin, or try the sample.</div>
 
-<!-- Two columns: filters and links on the left, content on the right. -->
+<!-- Collection filters and results -->
 <div class="layout">
 
-<!-- Left column: search and filters, with the helpful links underneath. -->
 <div class="sidebar">
-<!-- Search and filters. Add or rename dropdown options here; the matching logic is in render() in the script. -->
+
 <div class="tools">
   <label>Search sets / sources<input id="search" type="search" placeholder="Set name, dungeon, trial…"></label>
   <label>Show<select id="mode"><option value="all">All Sets</option><option value="sets">Missing Sets Only</option><option value="pieces">Missing Pieces Only</option></select></label>
@@ -253,7 +232,6 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
   <a class="backToTop" href="#top">↑ Back to top</a>
 </div>
 
-<!-- Helpful links, under the filters. Add, remove or reorder links by editing the list items. They open in a new tab and only load when clicked. -->
 <aside class="links" aria-labelledby="linksTitle">
   <h2 id="linksTitle">Helpful links</h2>
   <ul>
@@ -266,13 +244,10 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
 </aside>
 </div>
 
-<!-- Right column: summary numbers (they stay at the top while you scroll), then everything else -->
 <div class="content">
 
-<!-- The four summary numbers; the script fills this in -->
 <div id="cards" class="cards"></div>
 
-<!-- Next best targets. Add "open" to the details tag to start it expanded. How many rows show is TARGET_LIMIT in the script. -->
 <details id="targets" hidden>
   <summary><span class="name">Next best targets</span><span class="muted">Incomplete sticker-book sets with the fewest missing pieces. Crafted sets are excluded.</span></summary>
   <div class="targetsBody">
@@ -281,9 +256,8 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
   </div>
 </details>
 
-<!-- The set list; the script fills it in. What each row shows is in render(), at "One list row per set". -->
 <p id="count" class="muted"></p>
-<!-- First-run help. The script replaces this as soon as data loads. -->
+
 <main id="results"><div id="empty">
   <h2>Start here</h2>
   <ol>
@@ -294,18 +268,17 @@ footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-to
   <p>Or click <strong>Try sample export</strong> to see how the page works.</p>
 </div></main>
 
-<!-- Research table for the exported character -->
 <details id="researchPanel"><summary>Character research · eligibility by piece</summary><p>Known traits are character specific. A set requires its minimum trait count on each individual item research line. Eligibility below checks research only; materials, style, station access and crafting passives still apply.</p><div id="research"></div></details>
 
 </div>
 
 </div>
 
+<!-- Collection notes -->
 <footer>Unlocked = permanently recorded in the account sticker book on this server. Physical ownership is not scanned. Crafted sets have no sticker-book completion percentage. Hover or expand a set for exported bonuses; ESO-Hub links require internet and open only when clicked.</footer>
 
 <script>
-/* Data-only subset of Lua 5.1 SavedVariables. Never evaluates input. */
-// Sticky regexes match at an exact offset, so no source.slice(p) copies are needed.
+// Lua import and validation
 const RE_LONG_OPEN = /\[(=*)\[/y;
 const RE_IDENT = /[A-Za-z_][A-Za-z_0-9]*/y;
 const RE_FIELD = /[A-Za-z_][A-Za-z_0-9]*\s*=/y;
@@ -348,7 +321,7 @@ function parseSavedVariables(source) {
   function string() {
     if (longOpen()) return longString();
     const q = source[p++]; let result = '';
-    // Lua decimal escapes are single bytes; consecutive high bytes form UTF-8 text.
+
     let bytes = [];
     const flush = () => {
       if (bytes.length) { result += new TextDecoder('utf-8').decode(Uint8Array.from(bytes)); bytes = []; }
@@ -425,7 +398,7 @@ function tableValues(t) {
   if (!t || typeof t !== 'object') throw Error('Expected a Lua table');
   return Object.keys(t).sort((a,b) => Number(a)-Number(b)).map(k => t[k]);
 }
-// Schema 2 piece: "pieceId|unlocked(0/1)|armorType|weaponType|equipType|name" (name may not be split).
+
 function decodePiece(entry, labels) {
   if (typeof entry !== 'string' || entry.length > 30000) throw Error('Invalid piece record');
   const fields = []; let rest = entry;
@@ -461,7 +434,7 @@ function validateSnapshot(root) {
     set.bonuses = tableValues(set.bonuses).map(b => text(b, 'bonus'));
     if (set.bonuses.length > 50) throw Error('Too many bonuses');
   }
-  // Schema 2 exports localized enum labels once, keyed by numeric enum value.
+
   const labels = {};
   for (const kind of ['armor','weapon','equip']) {
     labels[kind] = Object.create(null);
@@ -495,6 +468,7 @@ function validateSnapshot(root) {
 }
 if (typeof module !== 'undefined') module.exports = {parseSavedVariables, validateSnapshot};
 
+// Sample collection data
 const DEMO = `-- Real sets; simulated player progress and internal IDs.
 SetCollectionExporterSaved =
 {["latest"] = {["schemaVersion"] = 2,
@@ -653,6 +627,7 @@ SetCollectionExporterSaved =
 ["known"] = 9,
 ["total"] = 9}}}}
 `;
+// Dashboard data and display
 const $ = id => document.getElementById(id);
 let snapshot = null;
 function el(tag, text, cls) { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
@@ -666,7 +641,7 @@ function equipmentLabel(label, piece = {}) {
     medium: {head:'Helmet', chest:'Jack', shoulders:'Arm Cops', hands:'Bracers', waist:'Belt', legs:'Guards', feet:'Boots'},
     heavy: {head:'Helm', chest:'Cuirass', shoulders:'Pauldrons', hands:'Gauntlets', waist:'Girdle', legs:'Greaves', feet:'Sabatons'}
   };
-  // Light chest can be a robe or jerkin: retain the actual exported item name.
+
   if (armorNames[weight]?.[slot]) return armorNames[weight][slot];
   const fullNames = {neck:'Necklace', feet:'Footwear'};
   return fullNames[slot] || label;
@@ -685,7 +660,7 @@ function load(text, demo = false) {
     for (const [value,label] of [[pct(next.unlocked,next.total),'Collection unlocked'],[`${next.unlocked} / ${next.total}`,'Individual pieces unlocked'],[next.total-next.unlocked,'Missing pieces'],[`${complete} / ${next.sets.length}`,'Complete sticker-book sets']]) {
       const card = el('div',null,'card');card.append(el('div',value,'big'),el('div',label,'muted'));$('cards').append(card);
     }
-    // thin bar for the whole collection, shown under the four numbers
+
     const overall = el('div', null, 'overall'), bar = el('div', null, 'overallBar'), done = next.total ? next.unlocked * 100 / next.total : 0;
     overall.setAttribute('role', 'progressbar'); overall.setAttribute('aria-label', 'Collection unlocked');
     overall.setAttribute('aria-valuemin', '0'); overall.setAttribute('aria-valuemax', '100'); overall.setAttribute('aria-valuenow', String(Math.round(done)));
@@ -693,25 +668,27 @@ function load(text, demo = false) {
     render(); renderResearch(); renderTargets();
   } catch (e) { $('status').className = 'error'; $('status').textContent = 'Import rejected: '+e.message+(snapshot ? '\nPrevious valid collection remains displayed.' : ''); }
 }
+// Crafting research and set bonuses
 function renderResearch() {
   const table = el('table'), head = el('tr');
   for (const t of ['Craft / research line','Known traits','Research thresholds met']) head.append(el('th',t));table.append(head);
   for (const r of snapshot.research) { const row=el('tr');row.append(el('td',`${r.craftName||r.craft} · ${r.name}`),el('td',`${r.known}/${r.total}`),el('td',Array.from({length:8},(_,i)=>i+2).filter(n=>n<=r.known).join(', ') || 'None (2–9 traits)'));table.append(row); }
   $('research').replaceChildren(table);
 }
-// Bonus text. Older exports wrote "(2) (2 items) ..."; drop the duplicate count.
+
 function cleanBonus(text) { return text.replace(/^\(\d+\)\s*(?=\(\d+ items?\))/, ''); }
-// Numbers and effects worth coloring: resource amounts, other stats, and Minor/Major buffs (English text only).
-const STAT_PATTERN = /\d[\d,.]*%?\s+(?:Maximum\s+)?(?:Health|Stamina|Magicka|Ultimate)(?:\s+Recovery)?|\d[\d,.]*%?\s+(?:Weapon and Spell Damage|Weapon Damage|Spell Damage|Weapon Critical|Spell Critical|Critical Chance|Critical Damage|Armor|Spell Resistance|Physical Resistance|Physical Penetration|Spell Penetration|Offensive Penetration)|\b(?:Minor|Major) [A-Z][a-z]+(?: [A-Z][a-z]+)?/g;
+
+// Set bonus colors
+const STAT_PATTERN = /\b(?:\d[\d,.]*%?\s+)?(?:Max(?:imum)?\s+)?(?:Health|Stamina|Magicka|Ultimate)(?:\s+Recovery)?\b|\b(?:\d[\d,.]*%?\s+)?(?:Weapon and Spell Damage|Weapon Damage|Spell Damage|Weapon Critical|Spell Critical|Critical Chance|Critical Damage|Armor|Spell Resistance|Physical Resistance|Physical Penetration|Spell Penetration|Offensive Penetration)\b|\b(?:Minor|Major)\s+[A-Za-z]+(?:\s+[A-Za-z]+)?\b/gi;
 function statClass(match) {
-  if (/^(Minor|Major)/.test(match)) return 'stat-buff';
-  if (/Health/.test(match)) return 'stat-health';
-  if (/Stamina/.test(match)) return 'stat-stamina';
-  if (/Magicka/.test(match)) return 'stat-magicka';
-  if (/Ultimate/.test(match)) return 'stat-ultimate';
+  if (/\b(?:Minor|Major)\b/i.test(match)) return 'stat-buff';
+  if (/Health/i.test(match)) return 'stat-health';
+  if (/Stamina/i.test(match)) return 'stat-stamina';
+  if (/Magicka/i.test(match)) return 'stat-magicka';
+  if (/Ultimate/i.test(match)) return 'stat-ultimate';
   return 'stat-other';
 }
-// One bonus as a line of text and spans (never innerHTML).
+
 function bonusLine(raw) {
   const line = el('div', null, 'bonusLine'), text = cleanBonus(raw);
   const count = /^\(\d+(?: items?)?\)/.exec(text);
@@ -731,6 +708,7 @@ function bonusBlock(bonuses) {
   else box.append(...bonuses.map(bonusLine));
   return box;
 }
+// Collection targets and filters
 const TARGET_LIMIT = 10;
 function renderTargets() {
   const type = $('targetType').value;
@@ -752,7 +730,7 @@ function renderTargets() {
     return item;
   }));
 }
-// Narrow the full list to one set by name and open it.
+
 function showSet(name) {
   clearTimeout(searchTimer);
   $('search').value = name; setTypeFilter('all'); $('mode').value = 'all';
@@ -761,21 +739,19 @@ function showSet(name) {
   if (match) { match.open = true; match.scrollIntoView({block: 'start'}); match.querySelector('summary').focus(); }
 }
 
-// Type chips: which set type the list is showing (all, dungeon, trial, other or crafted).
 let typeFilter = 'all';
 function setTypeFilter(value) {
   typeFilter = value;
   for (const chip of document.querySelectorAll('#typeChips .chip')) chip.setAttribute('aria-pressed', String(chip.dataset.value === value));
 }
 
-// Small icon paths for each type (24x24 grid, drawn as outlines). Change or add a type here.
 const TYPE_ICONS = {
   dungeon: 'M5 21V9a7 7 0 0 1 14 0v12M9 21v-6a3 3 0 0 1 6 0v6',
   trial: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
   other: 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
   crafted: 'M12 3l8 6-8 12L4 9z'
 };
-// The colored type label with its icon. The word is always there too.
+
 function typeBadge(type) {
   const badge = el('span', null, 'badge'), ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg'), path = document.createElementNS(ns, 'path');
@@ -785,17 +761,15 @@ function typeBadge(type) {
   return badge;
 }
 
-// Sorting. Sets that are finished (and crafted sets, which have no pieces) always go last in the progress-based sorts.
 const isFinished = s => s.type === 'crafted' || s.total === s.unlocked;
 function compareSets(sort, a, b) {
   if (sort === 'name') return 0;
   if (isFinished(a) || isFinished(b)) return isFinished(a) - isFinished(b);
   if (sort === 'fewest') return (a.total - a.unlocked) - (b.total - b.unlocked);
   if (sort === 'most') return (b.total - b.unlocked) - (a.total - a.unlocked);
-  return b.unlocked / b.total - a.unlocked / a.total; // closest to done
+  return b.unlocked / b.total - a.unlocked / a.total;
 }
 
-// Pieces are grouped under Light, Medium, Heavy, Weapons, then everything else.
 function pieceGroupOf(p) {
   if (p.armorType > 0) return {order: p.armorType, label: p.armorLabel || 'Armor'};
   if (p.weaponType > 0) return {order: 10, label: 'Weapons'};
@@ -808,6 +782,7 @@ function pieceRow(p) {
   return piece;
 }
 
+// Set list and piece details
 function render() {
   if (!snapshot) return;
   const query = $('search').value.toLocaleLowerCase(), type = typeFilter, mode = $('mode').value, group = $('group').value, sort = $('sort').value;
@@ -825,7 +800,7 @@ function render() {
     details.dataset.type = s.type;
     if (complete) details.classList.add('complete');
     summary.title = s.bonuses.map(cleanBonus).join('\n') || 'No bonuses available in this export.';
-    // One list row per set: arrow (CSS), name, type, source, progress text, progress bar (text always states the counts).
+
     summary.append(el('span', s.name, 'name'), typeBadge(s.type), el('span', s.source, 'muted'));
     if (s.type === 'crafted') summary.append(el('span', s.traitsNeeded ? `${s.traitsNeeded} traits required` : 'Trait requirement unknown', 'muted'));
     else {
@@ -834,17 +809,17 @@ function render() {
       const progress = el('progress', null, 'progress'); progress.max = s.total || 1; progress.value = s.unlocked;
       progress.setAttribute('aria-label', s.name + ' unlocked pieces'); summary.append(progress);
     }
-    // Open set: info on the left (classification, ESO-Hub link, bonuses), pieces on the right.
+
     const info = el('div', null, 'setInfo');
     if (s.classification) info.append(el('div', 'Classification: ' + s.classification, 'bonus muted'));
     const link = el('a', 'View on ESO-Hub ↗', 'link');
-    // Safe fixed origin; English LibSets name is preferred when available.
+
     const name = s.hubName || s.name;
     const slug = name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     link.href = 'https://eso-hub.com/en/sets/' + encodeURIComponent(slug); link.target = '_blank'; link.rel = 'noopener noreferrer';
     info.append(link, bonusBlock(s.bonuses));
     const pieces = el('div', null, 'pieces');
-    // Piece rows are built on first expand, so a collapsed list stays cheap to filter and search.
+
     let built = false;
     const buildPieces = () => {
       if (s.type === 'crafted') {
