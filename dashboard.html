@@ -3,40 +3,335 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>ESO · Set Collection</title>
 <style>
-:root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#101720;color:#e4eaf1}body{max-width:1250px;margin:auto;padding:32px}h1{font:36px Georgia,serif;margin:8px 0}h2{font-size:22px}p{color:#acb9c9}header{border-bottom:1px solid #34404f;padding-bottom:24px}.eyebrow{letter-spacing:.18em;font-size:12px;color:#d9b875}.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:22px 0}button,.file,select,input{background:#1d2a3a;color:#edf3fa;border:1px solid #536378;border-radius:6px;padding:10px;font:inherit}button,.file,summary{cursor:pointer}input[type=file]{max-width:320px}.tools label{display:flex;flex-direction:column;font-size:12px;gap:4px}input[type=search]{min-width:260px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin:25px 0}.card{padding:20px;background:#1b2634;border:1px solid #354256;border-radius:8px}.big{font-size:30px;color:#e5c88d}.muted{color:#acb9c9;font-size:14px}.error{color:#ffb8b8}#status{white-space:pre-wrap}details.set{border:1px solid #344256;border-radius:7px;margin:10px 0;background:#182331}summary{padding:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.name{font-weight:650;flex:1;min-width:210px}.badge{padding:3px 9px;border-radius:15px;background:#2a3e52;font-size:12px}.progress{width:110px;accent-color:#d4b575}a{color:#e8c98d}a:focus,button:focus,summary:focus{outline:2px solid #e8c98d;outline-offset:4px}.pieces{padding:0 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:8px}.piece{padding:10px;background:#101b28;border-radius:4px}.yes{color:#9cdbb8}.no{color:#f4b3a3}.bonus{margin:0 20px 15px;color:#becddd;white-space:pre-line}.link{margin:0 20px 15px;display:inline-block}#empty{padding:35px;border:1px dashed #536378;border-radius:8px}footer{margin-top:30px;border-top:1px solid #34404f;padding-top:15px;font-size:13px;color:#a6b4c5}#results{min-height:120px}#researchPanel{padding:15px;background:#182331}#researchPanel table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #34404f;padding:9px}#researchPanel{overflow:auto}@media(max-width:600px){body{padding:16px}h1{font-size:28px}.progress{width:80px}}@media(prefers-reduced-motion:no-preference){button:hover{background:#304159}}
-.tools input,.tools select,.tools button{box-sizing:border-box;height:46px;font-size:16px}
+/* Colors, fonts and sizes are all set in :root below. Change them there and the rest of the page follows. */
+:root {
+  color-scheme: dark;
+
+  --font-body: system-ui, sans-serif;
+  --font-heading: Georgia, serif;
+  --font-size-base: 16px;
+  --font-size-title: 36px;     /* shrinks to 28px on phones */
+  --font-size-small: 14px;
+
+  /* backgrounds, darkest to lightest */
+  --color-page: #141414;
+  --color-panel-deep: #181818; /* piece rows, target rows */
+  --color-panel: #1e1e1e;      /* set rows, panels */
+  --color-panel-raised: #242424; /* summary cards */
+  --color-control: #2a2a2a;    /* buttons, dropdowns, inputs */
+  --color-control-hover: #383838;
+  --color-badge: #333333;
+  --color-panel-card-top: #2b2b2b; /* top of the summary cards' gradient */
+  --color-panel-hover: #242424;    /* set row under the mouse */
+  --color-panel-open: #272727;     /* set row that is open */
+
+  --color-text: #ececec;
+  --color-text-muted: #b5b5b5;
+  --color-text-faint: #adadad;
+  --color-control-text: #f2f2f2;
+
+  /* gold */
+  --color-accent: #e8c98d;     /* links, focus ring, key numbers */
+  --color-accent-soft: #d9b875; /* small header label, group headings */
+  --color-accent-bar: #d4b575;
+
+  --color-border: #353535;
+  --color-border-panel: #3e3e3e;
+  --color-border-control: #666666;
+  --color-border-card: #404040;
+  --color-border-hover: #5a5a5a;
+  --color-text-bonus: #cfcfcf;     /* plain words in set bonuses */
+
+  --color-unlocked: #9cdbb8;
+  --color-missing: #f4b3a3;
+  --color-error: #ffb8b8;
+
+  /* glow behind the header, and the gold gradients (title, import button, progress bars) */
+  --color-glow: #222222;
+  --gradient-gold: linear-gradient(90deg, #b8934f, #f0d9a6 50%, #b8934f);
+  --gradient-gold-soft: linear-gradient(90deg, #c9a45e, #e8c98d);
+
+  /* colors for the numbers and effects in set bonus text */
+  --color-stat-health: #f08a7e;
+  --color-stat-stamina: #7fd69a;
+  --color-stat-magicka: #6cb4ee;
+  --color-stat-ultimate: #c39af2;
+  --color-stat-other: #f0a36b;    /* armor, damage, resistance, penetration */
+  --color-stat-buff: #f2d36b;     /* Minor and Major buffs */
+
+  /* stripe and badge color for each set type */
+  --color-type-dungeon: #6aa9d8;
+  --color-type-trial: #a98ee0;
+  --color-type-other: #a0a0a0;
+  --color-type-crafted: #cf9461;
+
+  --control-height: 46px;      /* buttons, dropdowns, search box */
+  --radius: 6px;
+  --page-max-width: 1250px;
+  --sidebar-width: 260px;      /* left column: filters and links */
+  --page-padding: 32px;        /* 16px on phones */
+}
+
+
+/* page, header, shared controls */
+body { max-width: var(--page-max-width); margin: auto; padding: var(--page-padding); font: var(--font-size-base)/1.5 var(--font-body); color: var(--color-text);
+  background: radial-gradient(900px 420px at 50% -80px, var(--color-glow), transparent 70%) no-repeat, var(--color-page); }
+h1 { font: var(--font-size-title)/1.15 var(--font-heading); margin: 8px 0; letter-spacing: .01em; color: #f6e7c4;
+  background: var(--gradient-gold); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 22px; }
+p { color: var(--color-text-muted); }
+header { border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, #b8934f, rgba(184,147,79,0) 85%) 1; padding-bottom: 24px; }
+.eyebrow { letter-spacing: .22em; font-size: 12px; color: var(--color-accent-soft); }
+.eyebrow::before { content: "◆"; margin-right: 10px; font-size: 9px; vertical-align: 2px; }
+.muted { color: var(--color-text-muted); font-size: var(--font-size-small); }
+.error { color: var(--color-error); }
+#status { white-space: pre-wrap; }
+a { color: var(--color-accent); }
+
+button, .file, select, input { background: var(--color-control); color: var(--color-control-text); border: 1px solid var(--color-border-control); border-radius: var(--radius); padding: 10px; font: inherit; }
+button, .file, summary { cursor: pointer; }
+@media (prefers-reduced-motion: no-preference) { button:hover { background: var(--color-control-hover); } }
+/* The gold focus ring shows for keyboard use only (focus-visible), so clicking a row with the mouse doesn't leave a box behind. */
+a:focus-visible, button:focus-visible, summary:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+summary:focus:not(:focus-visible), a:focus:not(:focus-visible), button:focus:not(:focus-visible) { outline: none; }
+
+/* the import button is a label around a hidden file input */
+.file, #demo { box-sizing: border-box; height: var(--control-height); margin: 0 8px 8px 0; display: inline-flex; align-items: center; justify-content: center; }
+.file { position: relative; padding: 0 20px; border-color: #e8c98d; background: var(--gradient-gold-soft); color: #1a1405; font-weight: 700; }
+.file:hover { filter: brightness(1.08); }
+.file input { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; opacity: 0; cursor: pointer; padding: 0; border: 0; }
+.file:has(input:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+
+/* the four summary numbers */
+/* Sticky header: stays at the top of the middle column while you scroll. The solid background hides what scrolls under it.
+   margin-top plus padding-top is 25px so the first box lines up with the filters and links boxes. */
+.cards { position: sticky; top: 0; z-index: 10; display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 15px 0 15px; padding: 10px 0; background: var(--color-page); }
+.cards:empty { display: none; } /* before any data loads, so the other columns still line up */
+.card { padding: 12px 14px; background: linear-gradient(180deg, var(--color-panel-card-top), var(--color-panel-raised)); border: 1px solid var(--color-border-card); border-top: 3px solid #c9a45e; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+.big { font: 26px/1.2 var(--font-heading); color: var(--color-accent); }
+
+/* next best targets panel */
+#targets { background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 8px; margin: 0 0 22px; }
+#targets[hidden] { display: none; }
+.targetsBody { padding: 0 20px 20px; }
+.targetsBody label { display: flex; flex-direction: column; font-size: 12px; gap: 4px; width: max-content; }
+.targetsBody select { box-sizing: border-box; height: var(--control-height); font-size: var(--font-size-base); }
+#targetList { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+#targetList li { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 12px; background: var(--color-panel-deep); border-radius: var(--radius); }
+#targetList .name { min-width: 180px; }
+#targetList .need { color: var(--color-accent); font-weight: 650; }
+#targetList button { height: 36px; padding: 4px 12px; }
+
+/* search and filter bar */
+/* the filters box: a stack of labeled controls */
+.tools { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 10px; }
+.tools label, .tools .field { display: flex; flex-direction: column; font-size: 12px; gap: 4px; }
+.tools input, .tools select, .tools button { box-sizing: border-box; width: 100%; height: var(--control-height); font-size: 16px; }
+.tools .backToTop { display: block; text-align: center; padding: 8px 0; font-weight: 650; }
+/* type chips: one-click filter buttons; aria-pressed="true" marks the active one */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tools .chip { width: auto; height: 34px; padding: 0 12px; border-radius: 17px; font-size: 14px; }
+.tools .chip[aria-pressed="true"] { background: var(--color-accent-bar); border-color: var(--color-accent-bar); color: #1a1405; font-weight: 650; }
+
+/* set list. data-type on a row picks the stripe and badge color. */
+#count { margin-top: 25px; } /* before data loads this is the first thing in the right column, so it matches the sidebar's top */
+#results { min-height: 120px; }
+#empty { padding: 28px 32px; border: 1px dashed var(--color-border-control); border-radius: 8px; }
+#empty h2 { margin: 0 0 10px; font: 22px var(--font-heading); color: var(--color-accent); }
+#empty ol { margin: 0 0 12px; padding-left: 22px; color: var(--color-text-muted); }
+#empty li { margin: 6px 0; }
+[data-type=dungeon] { --type-color: var(--color-type-dungeon); }
+[data-type=trial] { --type-color: var(--color-type-trial); }
+[data-type=other] { --type-color: var(--color-type-other); }
+[data-type=crafted] { --type-color: var(--color-type-crafted); }
+details.set { border: 1px solid var(--color-border-panel); border-left: 4px solid var(--type-color, var(--color-type-other)); border-radius: 8px; margin: 10px 0; background: var(--color-panel); transition: border-color .15s, background .15s; }
+details.set:hover { border-color: var(--color-border-hover); border-left-color: var(--type-color, var(--color-type-other)); background: var(--color-panel-hover); }
+details.set[open] { background: var(--color-panel-open); box-shadow: 0 8px 22px rgba(0,0,0,.28); }
+#results > h2 { font: 600 15px var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent-soft); margin: 26px 0 4px; padding-bottom: 6px; border-bottom: 1px solid var(--color-border); }
+summary { padding: 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.name { font-weight: 650; flex: 1; min-width: 210px; }
+.badge { padding: 3px 10px; border-radius: 15px; background: var(--color-badge); border: 1px solid var(--type-color, transparent); color: var(--color-text); font-size: 12px; text-transform: capitalize; letter-spacing: .03em; }
+.progress { appearance: none; -webkit-appearance: none; width: 120px; height: 8px; border: 0; border-radius: 4px; background: var(--color-badge); overflow: hidden; }
+.progress::-webkit-progress-bar { background: var(--color-badge); }
+.progress::-webkit-progress-value { background: var(--gradient-gold-soft); border-radius: 4px; }
+.progress::-moz-progress-bar { background: var(--gradient-gold-soft); border-radius: 4px; }
+/* arrow on every expandable row (set rows, targets, research); it turns when the section is open */
+details > summary::before { content: "▸"; flex: none; display: inline-block; color: var(--color-accent-soft); }
+details[open] > summary::before { transform: rotate(90deg); }
+@media (prefers-reduced-motion: no-preference) { details > summary::before { transition: transform .15s; } }
+.badge svg { width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; fill: none; stroke: var(--type-color, currentColor); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* finished sets: green bar and a check mark in the text */
+details.set.complete { background: var(--color-panel-deep); }
+.doneTag { color: var(--color-unlocked); font-weight: 650; }
+details.set.complete .progress::-webkit-progress-value { background: var(--color-unlocked); }
+details.set.complete .progress::-moz-progress-bar { background: var(--color-unlocked); }
+/* the open set: info (classification, link, bonuses) on the left, pieces on the right */
+.setBody { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(0, 2fr); gap: 20px; padding: 0 20px 20px; }
+.setBody .bonus, .setBody .link { margin: 0 0 12px; }
+.pieceGroup { margin: 0 0 6px; font: 600 13px var(--font-body); letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent-soft); }
+.pieceGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-bottom: 14px; }
+@media (max-width: 700px) { .setBody { grid-template-columns: minmax(0, 1fr); } }
+/* collection progress bar inside the sticky summary */
+.overall { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--color-badge); overflow: hidden; }
+.overallBar { height: 100%; background: var(--gradient-gold-soft); }
+.piece { padding: 10px 12px; background: var(--color-panel-deep); border-left: 3px solid var(--color-border-control); border-radius: 4px; }
+.piece:has(.yes), .piece.yes { border-left-color: var(--color-unlocked); }
+.piece:has(.no), .piece.no { border-left-color: var(--color-missing); }
+.yes { color: var(--color-unlocked); }
+.no { color: var(--color-missing); }
+.bonus { margin: 0 20px 15px; color: var(--color-text-bonus); }
+.bonusLine { margin: 3px 0; }
+.bonusCount { font-weight: 650; color: var(--color-text); }
+.stat-health { color: var(--color-stat-health); }
+.stat-stamina { color: var(--color-stat-stamina); }
+.stat-magicka { color: var(--color-stat-magicka); }
+.stat-ultimate { color: var(--color-stat-ultimate); }
+.stat-other { color: var(--color-stat-other); }
+.stat-buff { color: var(--color-stat-buff); font-weight: 650; }
+
+/* page body: main content plus the links panel. To put the links on the left, swap the two columns
+   below and add "order: -1" to .links. */
+.layout { display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); gap: 24px; align-items: start; }
+/* The left column holds the filters and the links. It stays in view while you scroll; if it is taller than the
+   window it scrolls on its own. The padding and negative margins keep keyboard focus rings from being clipped. */
+.sidebar { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 5px; margin: 20px -5px 0; }
+.links { padding: 16px 18px; background: var(--color-panel); border: 1px solid var(--color-border-panel); border-radius: 8px; }
+.links h2 { margin: 0 0 8px; font-size: 18px; }
+.links ul { list-style: none; margin: 0; padding: 0; }
+.links li { padding: 8px 0; border-top: 1px solid var(--color-border); }
+.links li:first-child { border-top: 0; }
+.links a { display: block; font-weight: 650; }
+/* narrow screens: one column (filters and links, then content). The summary header still sticks. */
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } .sidebar { position: static; max-height: none; overflow: visible; margin: 0; padding: 0; } .cards { margin-top: 0; } }
+.link { margin: 0 20px 15px; display: inline-block; }
+
+/* research table and footer */
+#researchPanel { padding: 15px; background: var(--color-panel); overflow: auto; }
+#researchPanel table { width: 100%; border-collapse: collapse; }
+td, th { text-align: left; border-bottom: 1px solid var(--color-border); padding: 9px; }
+footer { margin-top: 36px; border-top: 1px solid var(--color-border); padding-top: 18px; text-align: center; font-size: 13px; color: var(--color-text-faint); }
+
+@media (max-width: 600px) {
+  :root { --page-padding: 16px; --font-size-title: 28px; }
+  .progress { width: 80px; }
+}
 </style></head><body>
-<header><div class="eyebrow">THE ELDER SCROLLS ONLINE · ACCOUNT COLLECTION</div><h1>Your next missing piece.</h1><p>Explore your sticker book, plan a dungeon run, and check character trait research.</p>
-<label class="file">Import ESO SavedVariables <input id="file" type="file" accept=".lua,text/plain"></label> <button id="demo">Try sample export</button>
-<p class="muted">Open locally. Your file stays in this browser tab. Export in ESO with /setexport, wait for “Ready”, then /reloadui or log out.</p></header>
+
+<!-- Header: change the label, title and tagline text here. The import button needs its ids (file, demo) left alone. -->
+<header id="top">
+  <div class="eyebrow">THE ELDER SCROLLS ONLINE · ACCOUNT COLLECTION</div>
+  <h1>Your next missing piece.</h1>
+  <p>Explore your sticker book, plan a dungeon run, and check character trait research.</p>
+  <label class="file">Import ESO SavedVariables <input id="file" type="file" accept=".lua,text/plain"></label>
+  <button id="demo">Try sample export</button>
+  <p class="muted">Open locally. Your file stays in this browser tab. Export in ESO with /setexport, wait for “Ready”, then /reloadui or log out.</p>
+</header>
+
+<!-- Shows the account, server, character and any import error. It sits above the columns so they all start at the same height. -->
 <div id="status" role="status" aria-live="polite">Import SetCollectionExporter.lua to begin, or try the sample.</div>
+
+<!-- Two columns: filters and links on the left, content on the right. -->
+<div class="layout">
+
+<!-- Left column: search and filters, with the helpful links underneath. -->
+<div class="sidebar">
+<!-- Search and filters. Add or rename dropdown options here; the matching logic is in render() in the script. -->
+<div class="tools">
+  <label>Search sets / sources<input id="search" type="search" placeholder="Set name, dungeon, trial…"></label>
+  <label>Show<select id="mode"><option value="all">All Sets</option><option value="sets">Missing Sets Only</option><option value="pieces">Missing Pieces Only</option></select></label>
+  <div class="field"><span class="fieldLabel" id="typeLabel">Type</span>
+    <div class="chips" id="typeChips" role="group" aria-labelledby="typeLabel">
+      <button type="button" class="chip" data-value="all" aria-pressed="true">All</button>
+      <button type="button" class="chip" data-value="dungeon" aria-pressed="false">Dungeon</button>
+      <button type="button" class="chip" data-value="trial" aria-pressed="false">Trial</button>
+      <button type="button" class="chip" data-value="other" aria-pressed="false">Other</button>
+      <button type="button" class="chip" data-value="crafted" aria-pressed="false">Crafted</button>
+    </div></div>
+  <label>Group by<select id="group"><option value="name">Set name</option><option value="source">Source / dungeon / trial</option><option value="type">Dungeon / trial / other / crafted</option></select></label>
+  <label>Sort by<select id="sort"><option value="name">Name (A to Z)</option><option value="fewest">Fewest missing pieces</option><option value="closest">Closest to done (%)</option><option value="most">Most missing pieces</option></select></label>
+  <button id="expand">Expand visible</button><button id="collapse">Collapse visible</button>
+  <a class="backToTop" href="#top">↑ Back to top</a>
+</div>
+
+<!-- Helpful links, under the filters. Add, remove or reorder links by editing the list items. They open in a new tab and only load when clicked. -->
+<aside class="links" aria-labelledby="linksTitle">
+  <h2 id="linksTitle">Helpful links</h2>
+  <ul>
+    <li><a href="https://eso-hub.com/en/sets" target="_blank" rel="noopener noreferrer">ESO-Hub Sets</a><span class="muted">Set details and where they drop</span></li>
+    <li><a href="https://en.uesp.net/wiki/Online:Sets" target="_blank" rel="noopener noreferrer">UESP Sets</a><span class="muted">Wiki set reference</span></li>
+    <li><a href="https://www.esoui.com/" target="_blank" rel="noopener noreferrer">ESOUI</a><span class="muted">Add-on downloads</span></li>
+    <li><a href="https://www.esoui.com/downloads/info2241-LibSets.html" target="_blank" rel="noopener noreferrer">LibSets</a><span class="muted">Optional library for this add-on</span></li>
+    <li><a href="https://www.elderscrollsonline.com/" target="_blank" rel="noopener noreferrer">Elder Scrolls Online</a><span class="muted">Official site</span></li>
+  </ul>
+</aside>
+</div>
+
+<!-- Right column: summary numbers (they stay at the top while you scroll), then everything else -->
+<div class="content">
+
+<!-- The four summary numbers; the script fills this in -->
 <div id="cards" class="cards"></div>
-<div class="tools"><label>Search sets / sources<input id="search" type="search" placeholder="Set name, dungeon, trial…"></label>
-<label>Show<select id="mode"><option value="all">All Sets</option><option value="sets">Missing Sets Only</option><option value="pieces">Missing Pieces Only</option></select></label>
-<label>Type<select id="type"><option value="all">All types</option><option value="dungeon">Dungeon</option><option value="trial">Trial</option><option value="other">Other</option><option value="crafted">Crafted / research</option></select></label>
-<label>Group by<select id="group"><option value="name">Set name</option><option value="source">Source / dungeon / trial</option><option value="type">Dungeon / trial / other / crafted</option></select></label>
-<button id="expand">Expand visible</button><button id="collapse">Collapse visible</button></div>
-<p id="count" class="muted"></p><main id="results"><p id="empty">Your collection will appear here.</p></main>
+
+<!-- Next best targets. Add "open" to the details tag to start it expanded. How many rows show is TARGET_LIMIT in the script. -->
+<details id="targets" hidden>
+  <summary><span class="name">Next best targets</span><span class="muted">Incomplete sticker-book sets with the fewest missing pieces. Crafted sets are excluded.</span></summary>
+  <div class="targetsBody">
+    <label>Target type<select id="targetType"><option value="all">All types</option><option value="dungeon">Dungeon</option><option value="trial">Trial</option><option value="other">Other</option></select></label>
+    <ol id="targetList"></ol>
+  </div>
+</details>
+
+<!-- The set list; the script fills it in. What each row shows is in render(), at "One list row per set". -->
+<p id="count" class="muted"></p>
+<!-- First-run help. The script replaces this as soon as data loads. -->
+<main id="results"><div id="empty">
+  <h2>Start here</h2>
+  <ol>
+    <li>In ESO, type <strong>/setexport</strong> and wait for “Ready”.</li>
+    <li>Type <strong>/reloadui</strong> (or log out) so ESO writes the file.</li>
+    <li>Click <strong>Import ESO SavedVariables</strong> above and pick <strong>SetCollectionExporter.lua</strong> from your SavedVariables folder (Documents\Elder Scrolls Online\live\SavedVariables).</li>
+  </ol>
+  <p>Or click <strong>Try sample export</strong> to see how the page works.</p>
+</div></main>
+
+<!-- Research table for the exported character -->
 <details id="researchPanel"><summary>Character research · eligibility by piece</summary><p>Known traits are character specific. A set requires its minimum trait count on each individual item research line. Eligibility below checks research only; materials, style, station access and crafting passives still apply.</p><div id="research"></div></details>
+
+</div>
+
+</div>
+
 <footer>Unlocked = permanently recorded in the account sticker book on this server. Physical ownership is not scanned. Crafted sets have no sticker-book completion percentage. Hover or expand a set for exported bonuses; ESO-Hub links require internet and open only when clicked.</footer>
+
 <script>
 /* Data-only subset of Lua 5.1 SavedVariables. Never evaluates input. */
+// Sticky regexes match at an exact offset, so no source.slice(p) copies are needed.
+const RE_LONG_OPEN = /\[(=*)\[/y;
+const RE_IDENT = /[A-Za-z_][A-Za-z_0-9]*/y;
+const RE_FIELD = /[A-Za-z_][A-Za-z_0-9]*\s*=/y;
+const RE_NUMBER = /-?(?:0[xX][0-9a-fA-F]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/y;
+const RE_WHITESPACE = /[\s﻿]+/y;
+const SIMPLE_ESCAPES = {a:'\x07', b:'\b', f:'\f', n:'\n', r:'\r', t:'\t', v:'\v', '\\':'\\', '"':'"', "'":"'"};
+const MAX_TABLE_DEPTH = 80;
+const FORBIDDEN_KEYS =new Set(['__proto__', 'prototype', 'constructor']);
 function parseSavedVariables(source) {
   if (source.length > 20 * 1024 * 1024) throw Error('File exceeds 20 MiB limit.');
   let p = 0, nodes = 0;
   const fail = m => { throw Error(`${m} at character ${p}`); };
-  const longOpen = () => /^\[(=*)\[/.exec(source.slice(p));
+  const match = re => { re.lastIndex = p; return re.exec(source); };
+  const longOpen = () => match(RE_LONG_OPEN);
   function longString() {
     const m = longOpen(); p += m[0].length;
     const close = ']' + m[1] + ']', end = source.indexOf(close, p);
     if (end < 0) fail('Unterminated long string');
-    let value = source.slice(p, end); p = end + close.length;
+    const value = source.slice(p, end); p = end + close.length;
     return value.replace(/^\r?\n/, '');
   }
   function skip() {
     while (p < source.length) {
-      if (/\s|\uFEFF/.test(source[p])) { p++; continue; }
-      if (source.slice(p, p + 2) === '--') {
+      const ws = match(RE_WHITESPACE);
+      if (ws) { p += ws[0].length; continue; }
+      if (source.startsWith('--', p)) {
         p += 2;
         if (longOpen()) longString();
         else { while (p < source.length && source[p] !== '\n') p++; }
@@ -47,36 +342,46 @@ function parseSavedVariables(source) {
   }
   function take(c) { skip(); if (source[p] !== c) fail(`Expected ${c}`); p++; }
   function ident() {
-    skip(); const m = /^[A-Za-z_][A-Za-z_0-9]*/.exec(source.slice(p));
+    skip(); const m = match(RE_IDENT);
     if (!m) fail('Expected identifier'); p += m[0].length; return m[0];
   }
   function string() {
     if (longOpen()) return longString();
     const q = source[p++]; let result = '';
+    // Lua decimal escapes are single bytes; consecutive high bytes form UTF-8 text.
+    let bytes = [];
+    const flush = () => {
+      if (bytes.length) { result += new TextDecoder('utf-8').decode(Uint8Array.from(bytes)); bytes = []; }
+    };
     while (p < source.length) {
       const c = source[p++];
-      if (c === q) return result;
+      if (c === q) { flush(); return result; }
       if (c === '\n' || c === '\r') fail('Unescaped newline');
-      if (c !== '\\') { result += c; continue; }
+      if (c !== '\\') { flush(); result += c; continue; }
       if (p >= source.length) fail('Unterminated escape');
-      const e = source[p++], escapes = {a:'\x07', b:'\b', f:'\f', n:'\n', r:'\r', t:'\t', v:'\v', '\\':'\\', '"':'"', "'":"'"};
-      if (Object.hasOwn(escapes, e)) result += escapes[e];
-      else if (/[0-9]/.test(e)) {
+      const e = source[p++];
+      if (/[0-9]/.test(e)) {
         let digits = e;
         for (let i = 0; i < 2 && /[0-9]/.test(source[p] || 'x'); i++) digits += source[p++];
-        if (+digits > 255) fail('Invalid decimal byte escape');
-        result += String.fromCharCode(+digits);
-      } else if (e === '\n') result += '\n';
+        const byte = +digits;
+        if (byte > 255) fail('Invalid decimal byte escape');
+        if (byte < 128) { flush(); result += String.fromCharCode(byte); } else bytes.push(byte);
+        continue;
+      }
+      flush();
+      if (Object.hasOwn(SIMPLE_ESCAPES, e)) result += SIMPLE_ESCAPES[e];
+      else if (e === '\n') result += '\n';
       else if (e === '\r') { if (source[p] === '\n') p++; result += '\n'; }
       else fail('Unsupported string escape');
     }
     fail('Unterminated string');
   }
   function value(depth) {
-    if (++nodes > 600000 || depth > 80) fail('Parser complexity limit exceeded');
+    if (++nodes > 600000) fail('Parser complexity limit exceeded');
     skip(); const c = source[p];
     if (c === '"' || c === "'" || longOpen()) return string();
     if (c === '{') {
+      if (depth >= MAX_TABLE_DEPTH) fail('Parser complexity limit exceeded');
       p++; const result = Object.create(null); let implicit = 1;
       while (true) {
         skip(); if (source[p] === '}') { p++; return result; }
@@ -85,20 +390,17 @@ function parseSavedVariables(source) {
           p++; key = value(depth + 1);
           if (!(typeof key === 'string' || typeof key === 'number')) fail('Invalid table key');
           take(']'); take('='); v = value(depth + 1);
-        } else {
-          const field = /^[A-Za-z_][A-Za-z_0-9]*\s*=/.exec(source.slice(p));
-          if (field) { key = ident(); take('='); v = value(depth + 1); }
-          else { key = implicit++; v = value(depth + 1); }
-        }
+        } else if (match(RE_FIELD)) { key = ident(); take('='); v = value(depth + 1); }
+        else { key = implicit++; v = value(depth + 1); }
         key = String(key);
-        if (['__proto__', 'prototype', 'constructor'].includes(key)) fail('Forbidden table key');
+        if (FORBIDDEN_KEYS.has(key)) fail('Forbidden table key');
         if (Object.hasOwn(result, key)) fail('Duplicate table key');
         result[key] = v;
         skip(); if (source[p] === ',' || source[p] === ';') p++;
         else if (source[p] !== '}') fail('Expected table separator');
       }
     }
-    const number = /^-?(?:0[xX][0-9a-fA-F]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/.exec(source.slice(p));
+    const number = match(RE_NUMBER);
     if (number) {
       p += number[0].length; const n = Number(number[0]);
       if (!Number.isFinite(n)) fail('Invalid number'); return n;
@@ -113,6 +415,7 @@ function parseSavedVariables(source) {
   skip();
   while (p < source.length) {
     const name = ident();
+    if (FORBIDDEN_KEYS.has(name)) fail('Forbidden global name');
     if (Object.hasOwn(root, name)) fail('Duplicate global assignment');
     take('='); root[name] = value(0); skip(); if (source[p] === ';') p++; skip();
   }
@@ -122,9 +425,25 @@ function tableValues(t) {
   if (!t || typeof t !== 'object') throw Error('Expected a Lua table');
   return Object.keys(t).sort((a,b) => Number(a)-Number(b)).map(k => t[k]);
 }
+// Schema 2 piece: "pieceId|unlocked(0/1)|armorType|weaponType|equipType|name" (name may not be split).
+function decodePiece(entry, labels) {
+  if (typeof entry !== 'string' || entry.length > 30000) throw Error('Invalid piece record');
+  const fields = []; let rest = entry;
+  for (let i = 0; i < 5; i++) {
+    const at = rest.indexOf('|');
+    if (at < 0) throw Error('Malformed piece record');
+    fields.push(rest.slice(0, at)); rest = rest.slice(at + 1);
+  }
+  if (!fields.every(f => /^\d{1,15}$/.test(f)) || (fields[1] !== '0' && fields[1] !== '1')) throw Error('Malformed piece record');
+  const [id, unlocked, armorType, weaponType, equipType] = fields.map(Number);
+  return {
+    id, name: rest, unlocked: unlocked === 1, armorType, weaponType, equipType,
+    armorLabel: labels.armor[armorType] || '', weaponLabel: labels.weapon[weaponType] || '', equipLabel: labels.equip[equipType] || '',
+  };
+}
 function validateSnapshot(root) {
   const s = root?.SetCollectionExporterSaved?.latest;
-  if (!s || s.schemaVersion !== 1) throw Error('No supported SetCollectionExporterSaved.latest snapshot (schema 1) found.');
+  if (!s || (s.schemaVersion !== 1 && s.schemaVersion !== 2)) throw Error('No supported SetCollectionExporterSaved.latest snapshot (schema 1 or 2) found.');
   const text = (v, label) => { if (typeof v !== 'string' || v.length > 30000) throw Error('Invalid ' + label); return v; };
   const integer = v => { if (!Number.isSafeInteger(v) || v < 0) throw Error('Invalid nonnegative integer'); return v; };
   s.sets = tableValues(s.sets); s.craftedSets = tableValues(s.craftedSets); s.research = tableValues(s.research);
@@ -142,9 +461,17 @@ function validateSnapshot(root) {
     set.bonuses = tableValues(set.bonuses).map(b => text(b, 'bonus'));
     if (set.bonuses.length > 50) throw Error('Too many bonuses');
   }
+  // Schema 2 exports localized enum labels once, keyed by numeric enum value.
+  const labels = {};
+  for (const kind of ['armor','weapon','equip']) {
+    labels[kind] = Object.create(null);
+    const table = s.labels && s.labels[kind];
+    if (table) for (const key of Object.keys(table)) labels[kind][key] = text(table[key], kind + ' label');
+  }
   for (const set of s.sets) {
     set.pieces = tableValues(set.pieces);
     if (set.pieces.length > 1000) throw Error('Too many pieces');
+    if (s.schemaVersion === 2) set.pieces = set.pieces.map(entry => decodePiece(entry, labels));
     const pieces = new Set();
     for (const piece of set.pieces) {
       integer(piece.id); if (pieces.has(piece.id)) throw Error('Duplicate piece ID'); pieces.add(piece.id);
@@ -168,7 +495,164 @@ function validateSnapshot(root) {
 }
 if (typeof module !== 'undefined') module.exports = {parseSavedVariables, validateSnapshot};
 
-const DEMO = "-- Synthetic sample; NOT an actual player export.\nSetCollectionExporterSaved =\n{\n    [\"latest\"] =\n    {\n        [\"schemaVersion\"] = 1,\n        [\"timestamp\"] = 1792011600,\n        [\"apiVersion\"] = 101051,\n        [\"account\"] = \"@SampleAccount\",\n        [\"world\"] = \"NA Megaserver\",\n        [\"character\"] = \"Sample Crafter\",\n        [\"characterId\"] = \"12345678901234567\",\n        [\"warnings\"] = {\"Synthetic demonstration data; set IDs and pieces are illustrative.\"},\n        [\"sets\"] =\n        {\n            [1] = { id = 10001, name = \"Dungeon Sample\", type = \"dungeon\", source = \"Sample Dungeon\", classification = \"native\",\n                bonuses = {\"(2) Adds sample recovery\", \"(5) Sample bonus, exported as plain text.\"},\n                pieces = {\n                    {id = 201, name = \"Light Head\", unlocked = true},\n                    {id = 202, name = \"Medium Head\", unlocked = false},\n                    {id = 203, name = \"Heavy Head\", unlocked = false},\n                },\n            },\n            [2] = {id = 10002, name = \"Trial Sample\", type = \"trial\", source = \"Sample Trial\", classification = \"LibSets\",\n                bonuses = {\"(2) Sample trial bonus\"}, pieces = {{id = 204, name = \"Restoration Staff\", unlocked = true}},\n            },\n            [3] = {id = 10003, name = \"Other Sample\", type = \"other\", source = \"Sample Zone\",\n                bonuses = {}, pieces = {{id = 205, name = \"Shield\", unlocked = false}},\n            },\n        },\n        [\"craftedSets\"] = {\n            {id = 10004, name = \"Crafted Sample\", type = \"crafted\", source = \"Sample Workshop\", traitsNeeded = 6,\n                bonuses = {\"(5) Sample crafted bonus\"}},\n            {id = 10005, name = \"Unknown Requirement Sample\", type = \"crafted\", source = \"Unknown\", bonuses = {}},\n        },\n        [\"research\"] = {\n            {craft = 1, line = 1, name = \"Axes\", known = 6, total = 9},\n            {craft = 2, line = 1, name = \"Robes\", known = 4, total = 9},\n            {craft = 7, line = 1, name = \"Rings\", known = 9, total = 9},\n        },\n    },\n}\n";
+const DEMO = `-- Real sets; simulated player progress and internal IDs.
+SetCollectionExporterSaved =
+{["latest"] = {["schemaVersion"] = 2,
+["timestamp"] = 1792011600,
+["apiVersion"] = 101051,
+["account"] = "@SampleAccount",
+["world"] = "NA Megaserver",
+["character"] = "Sample Crafter",
+["characterId"] = "12345678901234567",
+["warnings"] = {"Real ESO sets with simulated collection and research progress. Internal sample IDs are illustrative; bonus descriptions are summaries at CP160."},
+["labels"] = {["armor"] = {[0] = "",
+[1] = "Light",
+[2] = "Medium"},
+["weapon"] = {[0] = "",
+[1] = "Axe",
+[2] = "Mace",
+[3] = "Sword",
+[4] = "Battle Axe",
+[5] = "Maul",
+[6] = "Greatsword",
+[7] = "Dagger",
+[8] = "Bow",
+[9] = "Inferno Staff",
+[10] = "Ice Staff",
+[11] = "Lightning Staff",
+[12] = "Restoration Staff",
+[13] = "Shield"},
+["equip"] = {[0] = "",
+[1] = "Head",
+[2] = "Chest",
+[3] = "Shoulders",
+[4] = "Waist",
+[5] = "Hands",
+[6] = "Legs",
+[7] = "Feet",
+[8] = "Neck",
+[9] = "Ring",
+[10] = "Main Hand",
+[11] = "Two Hand",
+[12] = "Off Hand"}},
+["sets"] = {{["id"] = 10001,
+["name"] = "Strength of the Automaton",
+["type"] = "dungeon",
+["source"] = "Darkshade Caverns I / Darkshade Caverns II",
+["bonuses"] = {"(2 items) Critical Chance +657",
+"(3 items) Maximum Stamina +1096",
+"(4 items) Weapon and Spell Damage +129",
+"(5 items) Physical and Bleed abilities gain 400 Weapon and Spell Damage."},
+["pieces"] = {"201|1|2|0|1|Helmet",
+"202|1|2|0|2|Jack",
+"203|0|2|0|3|Arm Cops",
+"204|1|2|0|4|Belt",
+"205|1|2|0|5|Bracers",
+"206|0|2|0|6|Guards",
+"207|1|2|0|7|Boots",
+"208|1|0|0|8|Necklace",
+"209|0|0|0|9|Ring",
+"210|1|0|1|10|Axe",
+"211|1|0|2|10|Mace",
+"212|1|0|3|10|Sword",
+"213|0|0|4|11|Battle Axe",
+"214|1|0|5|11|Maul",
+"215|1|0|6|11|Greatsword",
+"216|1|0|7|10|Dagger",
+"217|1|0|8|11|Bow",
+"218|0|0|9|11|Inferno Staff",
+"219|1|0|10|11|Ice Staff",
+"220|1|0|11|11|Lightning Staff",
+"221|0|0|12|11|Restoration Staff",
+"222|1|0|13|12|Shield"}},
+{["id"] = 10002,
+["name"] = "Arms of Relequen",
+["type"] = "trial",
+["source"] = "Cloudrest",
+["bonuses"] = {"(2 items) Weapon and Spell Damage +129",
+"(3 items) Minor Slayer: 5% increased damage against monsters.",
+"(4 items) Offensive Penetration +1487",
+"(5 items) Light and Heavy attacks build harmful winds: 52 Physical Damage per stack each second, scaling with your higher Weapon or Spell Damage. Up to 10 stacks, added every 0.5 seconds; lasts 5 seconds (1 second versus players)."},
+["pieces"] = {"301|1|2|0|1|Helmet",
+"302|0|2|0|2|Jack",
+"303|1|2|0|3|Arm Cops",
+"304|0|2|0|4|Belt",
+"305|1|2|0|5|Bracers",
+"306|1|2|0|6|Guards",
+"307|1|2|0|7|Boots",
+"308|0|0|0|8|Necklace",
+"309|1|0|0|9|Ring",
+"310|0|0|1|10|Axe",
+"311|1|0|2|10|Mace",
+"312|0|0|3|10|Sword",
+"313|1|0|4|11|Battle Axe",
+"314|0|0|5|11|Maul",
+"315|1|0|6|11|Greatsword",
+"316|0|0|7|10|Dagger",
+"317|1|0|8|11|Bow",
+"318|0|0|9|11|Inferno Staff",
+"319|1|0|10|11|Ice Staff",
+"320|0|0|11|11|Lightning Staff",
+"321|1|0|12|11|Restoration Staff",
+"322|0|0|13|12|Shield"}},
+{["id"] = 10003,
+["name"] = "Mother's Sorrow",
+["type"] = "other",
+["source"] = "Deshaan (Overland)",
+["bonuses"] = {"(2 items) Maximum Magicka +1096",
+"(3 items) Critical Chance +657",
+"(4 items) Critical Chance +657",
+"(5 items) Critical Chance +1528"},
+["pieces"] = {"401|1|1|0|1|Hat",
+"402|1|1|0|2|Robe",
+"403|1|1|0|3|Epaulets",
+"404|1|1|0|4|Sash",
+"405|1|1|0|5|Gloves",
+"406|1|1|0|6|Breeches",
+"407|1|1|0|7|Shoes",
+"408|1|0|0|8|Necklace",
+"409|1|0|0|9|Ring",
+"410|1|0|1|10|Axe",
+"411|1|0|2|10|Mace",
+"412|1|0|3|10|Sword",
+"413|1|0|4|11|Battle Axe",
+"414|1|0|5|11|Maul",
+"415|1|0|6|11|Greatsword",
+"416|1|0|7|10|Dagger",
+"417|0|0|8|11|Bow",
+"418|1|0|9|11|Inferno Staff",
+"419|1|0|10|11|Ice Staff",
+"420|1|0|11|11|Lightning Staff",
+"421|0|0|12|11|Restoration Staff",
+"422|1|0|13|12|Shield"}}},
+["craftedSets"] = {{["id"] = 10004,
+["name"] = "Hunding's Rage",
+["type"] = "crafted",
+["source"] = "Bangkorai / Reaper's March / The Rift",
+["traitsNeeded"] = 6,
+["bonuses"] = {"(2 items) Critical Chance +657",
+"(3 items) Maximum Stamina +1096",
+"(4 items) Critical Chance +657",
+"(5 items) Weapon and Spell Damage +300"}}},
+["research"] = {{["craft"] = 1,
+["craftName"] = "Blacksmithing",
+["line"] = 1,
+["name"] = "Axes",
+["known"] = 6,
+["total"] = 9},
+{["craft"] = 2,
+["craftName"] = "Clothing",
+["line"] = 1,
+["name"] = "Robes",
+["known"] = 4,
+["total"] = 9},
+{["craft"] = 7,
+["craftName"] = "Jewelry Crafting",
+["line"] = 1,
+["name"] = "Rings",
+["known"] = 9,
+["total"] = 9}}}}
+`;
 const $ = id => document.getElementById(id);
 let snapshot = null;
 function el(tag, text, cls) { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
@@ -201,7 +685,12 @@ function load(text, demo = false) {
     for (const [value,label] of [[pct(next.unlocked,next.total),'Collection unlocked'],[`${next.unlocked} / ${next.total}`,'Individual pieces unlocked'],[next.total-next.unlocked,'Missing pieces'],[`${complete} / ${next.sets.length}`,'Complete sticker-book sets']]) {
       const card = el('div',null,'card');card.append(el('div',value,'big'),el('div',label,'muted'));$('cards').append(card);
     }
-    render(); renderResearch();
+    // thin bar for the whole collection, shown under the four numbers
+    const overall = el('div', null, 'overall'), bar = el('div', null, 'overallBar'), done = next.total ? next.unlocked * 100 / next.total : 0;
+    overall.setAttribute('role', 'progressbar'); overall.setAttribute('aria-label', 'Collection unlocked');
+    overall.setAttribute('aria-valuemin', '0'); overall.setAttribute('aria-valuemax', '100'); overall.setAttribute('aria-valuenow', String(Math.round(done)));
+    bar.style.width = done + '%'; overall.append(bar); $('cards').append(overall);
+    render(); renderResearch(); renderTargets();
   } catch (e) { $('status').className = 'error'; $('status').textContent = 'Import rejected: '+e.message+(snapshot ? '\nPrevious valid collection remains displayed.' : ''); }
 }
 function renderResearch() {
@@ -210,46 +699,190 @@ function renderResearch() {
   for (const r of snapshot.research) { const row=el('tr');row.append(el('td',`${r.craftName||r.craft} · ${r.name}`),el('td',`${r.known}/${r.total}`),el('td',Array.from({length:8},(_,i)=>i+2).filter(n=>n<=r.known).join(', ') || 'None (2–9 traits)'));table.append(row); }
   $('research').replaceChildren(table);
 }
+// Bonus text. Older exports wrote "(2) (2 items) ..."; drop the duplicate count.
+function cleanBonus(text) { return text.replace(/^\(\d+\)\s*(?=\(\d+ items?\))/, ''); }
+// Numbers and effects worth coloring: resource amounts, other stats, and Minor/Major buffs (English text only).
+const STAT_PATTERN = /\d[\d,.]*%?\s+(?:Maximum\s+)?(?:Health|Stamina|Magicka|Ultimate)(?:\s+Recovery)?|\d[\d,.]*%?\s+(?:Weapon and Spell Damage|Weapon Damage|Spell Damage|Weapon Critical|Spell Critical|Critical Chance|Critical Damage|Armor|Spell Resistance|Physical Resistance|Physical Penetration|Spell Penetration|Offensive Penetration)|\b(?:Minor|Major) [A-Z][a-z]+(?: [A-Z][a-z]+)?/g;
+function statClass(match) {
+  if (/^(Minor|Major)/.test(match)) return 'stat-buff';
+  if (/Health/.test(match)) return 'stat-health';
+  if (/Stamina/.test(match)) return 'stat-stamina';
+  if (/Magicka/.test(match)) return 'stat-magicka';
+  if (/Ultimate/.test(match)) return 'stat-ultimate';
+  return 'stat-other';
+}
+// One bonus as a line of text and spans (never innerHTML).
+function bonusLine(raw) {
+  const line = el('div', null, 'bonusLine'), text = cleanBonus(raw);
+  const count = /^\(\d+(?: items?)?\)/.exec(text);
+  let rest = text;
+  if (count) { line.append(el('span', count[0], 'bonusCount')); rest = text.slice(count[0].length); }
+  let last = 0;
+  for (const m of rest.matchAll(STAT_PATTERN)) {
+    line.append(document.createTextNode(rest.slice(last, m.index)), el('span', m[0], statClass(m[0])));
+    last = m.index + m[0].length;
+  }
+  line.append(document.createTextNode(rest.slice(last)));
+  return line;
+}
+function bonusBlock(bonuses) {
+  const box = el('div', null, 'bonus');
+  if (!bonuses.length) box.textContent = 'Bonuses unavailable.';
+  else box.append(...bonuses.map(bonusLine));
+  return box;
+}
+const TARGET_LIMIT = 10;
+function renderTargets() {
+  const type = $('targetType').value;
+  const targets = snapshot.sets
+    .filter(s => s.total > 0 && s.unlocked < s.total && (type === 'all' || s.type === type))
+    .sort((a, b) => (a.total - a.unlocked) - (b.total - b.unlocked) || b.unlocked - a.unlocked || a.name.localeCompare(b.name))
+    .slice(0, TARGET_LIMIT);
+  $('targets').hidden = false;
+  const list = $('targetList');
+  if (!targets.length) { list.replaceChildren(el('li', 'No incomplete sets of this type: nothing left to collect here.')); return; }
+  list.replaceChildren(...targets.map(s => {
+    const item = el('li'), show = el('button', 'Show in list');
+    item.dataset.type = s.type;
+    show.type = 'button';
+    show.setAttribute('aria-label', 'Show ' + s.name + ' in the set list');
+    show.addEventListener('click', () => showSet(s.name));
+    item.append(el('span', s.name, 'name'), typeBadge(s.type), el('span', s.source, 'muted'),
+      el('span', `${s.total - s.unlocked} missing · ${s.unlocked}/${s.total} unlocked`, 'need'), show);
+    return item;
+  }));
+}
+// Narrow the full list to one set by name and open it.
+function showSet(name) {
+  clearTimeout(searchTimer);
+  $('search').value = name; setTypeFilter('all'); $('mode').value = 'all';
+  render();
+  const match = [...document.querySelectorAll('details.set')].find(d => d.querySelector('.name').textContent === name);
+  if (match) { match.open = true; match.scrollIntoView({block: 'start'}); match.querySelector('summary').focus(); }
+}
+
+// Type chips: which set type the list is showing (all, dungeon, trial, other or crafted).
+let typeFilter = 'all';
+function setTypeFilter(value) {
+  typeFilter = value;
+  for (const chip of document.querySelectorAll('#typeChips .chip')) chip.setAttribute('aria-pressed', String(chip.dataset.value === value));
+}
+
+// Small icon paths for each type (24x24 grid, drawn as outlines). Change or add a type here.
+const TYPE_ICONS = {
+  dungeon: 'M5 21V9a7 7 0 0 1 14 0v12M9 21v-6a3 3 0 0 1 6 0v6',
+  trial: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+  other: 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  crafted: 'M12 3l8 6-8 12L4 9z'
+};
+// The colored type label with its icon. The word is always there too.
+function typeBadge(type) {
+  const badge = el('span', null, 'badge'), ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg'), path = document.createElementNS(ns, 'path');
+  svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true');
+  path.setAttribute('d', TYPE_ICONS[type] || TYPE_ICONS.other);
+  svg.append(path); badge.append(svg, document.createTextNode(type));
+  return badge;
+}
+
+// Sorting. Sets that are finished (and crafted sets, which have no pieces) always go last in the progress-based sorts.
+const isFinished = s => s.type === 'crafted' || s.total === s.unlocked;
+function compareSets(sort, a, b) {
+  if (sort === 'name') return 0;
+  if (isFinished(a) || isFinished(b)) return isFinished(a) - isFinished(b);
+  if (sort === 'fewest') return (a.total - a.unlocked) - (b.total - b.unlocked);
+  if (sort === 'most') return (b.total - b.unlocked) - (a.total - a.unlocked);
+  return b.unlocked / b.total - a.unlocked / a.total; // closest to done
+}
+
+// Pieces are grouped under Light, Medium, Heavy, Weapons, then everything else.
+function pieceGroupOf(p) {
+  if (p.armorType > 0) return {order: p.armorType, label: p.armorLabel || 'Armor'};
+  if (p.weaponType > 0) return {order: 10, label: 'Weapons'};
+  return {order: 11, label: 'Jewelry & other'};
+}
+function pieceRow(p) {
+  const piece = el('div', null, 'piece');
+  piece.append(el('div', (p.unlocked ? '✓ Unlocked · ' : '○ Missing · ') + pieceName(p), p.unlocked ? 'yes' : 'no'),
+    el('div', [p.armorType > 0 ? p.armorLabel : '', p.weaponType > 0 ? p.weaponLabel : '', equipmentLabel(p.equipLabel, p)].filter(Boolean).join(' · '), 'muted'));
+  return piece;
+}
+
 function render() {
   if (!snapshot) return;
-  const query=$('search').value.toLocaleLowerCase(), type=$('type').value, mode=$('mode').value, group=$('group').value;
-  const sets=[...snapshot.sets,...snapshot.craftedSets].filter(s =>
-    (type==='all'||s.type===type) && (s.name+' '+s.source).toLocaleLowerCase().includes(query) &&
-    (mode==='all'||(s.type!=='crafted'&&s.unlocked<s.total)));
-  const key=s=>group==='source'?s.source:group==='type'?s.type:'';
-  sets.sort((a,b)=>key(a).localeCompare(key(b))||a.name.localeCompare(b.name));
-  $('count').textContent=`${sets.length} sets shown · summary above always covers the full imported sticker book. Missing Sets means any incomplete set. Missing filters exclude crafted sets.`;
-  const fragment=document.createDocumentFragment(); let prev=null;
+  const query = $('search').value.toLocaleLowerCase(), type = typeFilter, mode = $('mode').value, group = $('group').value, sort = $('sort').value;
+  const sets = [...snapshot.sets, ...snapshot.craftedSets].filter(s =>
+    (type === 'all' || s.type === type) && (s.name + ' ' + s.source).toLocaleLowerCase().includes(query) &&
+    (mode === 'all' || (s.type !== 'crafted' && s.unlocked < s.total)));
+  const key = s => group === 'source' ? s.source : group === 'type' ? s.type : '';
+  sets.sort((a, b) => key(a).localeCompare(key(b)) || compareSets(sort, a, b) || a.name.localeCompare(b.name));
+  $('count').textContent = `${sets.length} sets shown · summary above always covers the full imported sticker book. Missing Sets means any incomplete set. Missing filters exclude crafted sets.`;
+  const fragment = document.createDocumentFragment(); let prev = null;
   for (const s of sets) {
-    const k=key(s);if(k!==prev&&k){fragment.append(el('h2',k));}prev=k;
-    const details=el('details',null,'set'), summary=el('summary');
-    summary.title=s.bonuses.join('\n')||'No bonuses available in this export.';
-    summary.append(el('span',s.name,'name'),el('span',s.type,'badge'));
-    if(s.type==='crafted') summary.append(el('span',s.traitsNeeded?`${s.traitsNeeded} traits required`:'Trait requirement unknown','muted'));
-    else {summary.append(el('span',`${s.unlocked}/${s.total} · ${pct(s.unlocked,s.total)}`));const progress=el('progress',null,'progress');progress.max=s.total||1;progress.value=s.unlocked;progress.setAttribute('aria-label',s.name+' unlocked pieces');summary.append(progress);}
-    details.append(summary,el('div',s.source,'bonus'));
-    if(s.classification) details.append(el('div','Classification: '+s.classification,'bonus muted'));
-    const link=el('a','View on ESO-Hub ↗','link');
-    // Safe fixed origin; English LibSets name is preferred when available.
-    const name=s.hubName||s.name;
-    const slug=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    link.href='https://eso-hub.com/en/sets/'+encodeURIComponent(slug);link.target='_blank';link.rel='noopener noreferrer';details.append(link);
-    details.append(el('div',s.bonuses.join('\n')||'Bonuses unavailable.','bonus'));
-    const pieces=el('div',null,'pieces');
-    if(s.type==='crafted') {
-      if(!s.traitsNeeded) pieces.append(el('p','Eligibility unknown. Install/update LibSets, export again, and re-import.'));
-      else for(const r of snapshot.research) pieces.append(el('div',`${r.craftName||r.craft} · ${r.name} · ${r.known}/${s.traitsNeeded} traits · ${r.known>=s.traitsNeeded?'Research eligible':'More research needed'}`,'piece '+(r.known>=s.traitsNeeded?'yes':'no')));
-    } else for(const p of s.pieces) {
-      if(mode==='pieces'&&p.unlocked)continue;
-      const piece=el('div',null,'piece');piece.append(el('div',(p.unlocked?'✓ Unlocked · ':'○ Missing · ')+pieceName(p),p.unlocked?'yes':'no'),el('div',[p.armorType>0?p.armorLabel:'',p.weaponType>0?p.weaponLabel:'',equipmentLabel(p.equipLabel,p)].filter(Boolean).join(' · '),'muted'));pieces.append(piece);
+    const k = key(s); if (k !== prev && k) { fragment.append(el('h2', k)); } prev = k;
+    const details = el('details', null, 'set'), summary = el('summary');
+    const complete = s.type !== 'crafted' && s.total > 0 && s.unlocked === s.total;
+    details.dataset.type = s.type;
+    if (complete) details.classList.add('complete');
+    summary.title = s.bonuses.map(cleanBonus).join('\n') || 'No bonuses available in this export.';
+    // One list row per set: arrow (CSS), name, type, source, progress text, progress bar (text always states the counts).
+    summary.append(el('span', s.name, 'name'), typeBadge(s.type), el('span', s.source, 'muted'));
+    if (s.type === 'crafted') summary.append(el('span', s.traitsNeeded ? `${s.traitsNeeded} traits required` : 'Trait requirement unknown', 'muted'));
+    else {
+      const counts = `${s.unlocked}/${s.total} · ${pct(s.unlocked, s.total)} · ${s.total - s.unlocked} missing`;
+      summary.append(complete ? el('span', '✓ Complete · ' + s.unlocked + '/' + s.total, 'doneTag') : el('span', counts));
+      const progress = el('progress', null, 'progress'); progress.max = s.total || 1; progress.value = s.unlocked;
+      progress.setAttribute('aria-label', s.name + ' unlocked pieces'); summary.append(progress);
     }
-    details.append(pieces);fragment.append(details);
+    // Open set: info on the left (classification, ESO-Hub link, bonuses), pieces on the right.
+    const info = el('div', null, 'setInfo');
+    if (s.classification) info.append(el('div', 'Classification: ' + s.classification, 'bonus muted'));
+    const link = el('a', 'View on ESO-Hub ↗', 'link');
+    // Safe fixed origin; English LibSets name is preferred when available.
+    const name = s.hubName || s.name;
+    const slug = name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    link.href = 'https://eso-hub.com/en/sets/' + encodeURIComponent(slug); link.target = '_blank'; link.rel = 'noopener noreferrer';
+    info.append(link, bonusBlock(s.bonuses));
+    const pieces = el('div', null, 'pieces');
+    // Piece rows are built on first expand, so a collapsed list stays cheap to filter and search.
+    let built = false;
+    const buildPieces = () => {
+      if (s.type === 'crafted') {
+        const grid = el('div', null, 'pieceGrid');
+        if (!s.traitsNeeded) pieces.append(el('p', 'Eligibility unknown. Install/update LibSets, export again, and re-import.'));
+        else {
+          for (const r of snapshot.research) grid.append(el('div', `${r.craftName || r.craft} · ${r.name} · ${r.known}/${s.traitsNeeded} traits · ${r.known >= s.traitsNeeded ? 'Research eligible' : 'More research needed'}`, 'piece ' + (r.known >= s.traitsNeeded ? 'yes' : 'no')));
+          pieces.append(grid);
+        }
+        return;
+      }
+      const groups = new Map();
+      for (const p of s.pieces) {
+        if (mode === 'pieces' && p.unlocked) continue;
+        const g = pieceGroupOf(p);
+        if (!groups.has(g.order)) groups.set(g.order, {label: g.label, items: []});
+        groups.get(g.order).items.push(p);
+      }
+      for (const [, g] of [...groups].sort((a, b) => a[0] - b[0])) {
+        const grid = el('div', null, 'pieceGrid');
+        grid.append(...g.items.map(pieceRow));
+        pieces.append(el('h3', g.label, 'pieceGroup'), grid);
+      }
+      if (!groups.size) pieces.append(el('p', 'No pieces to show.'));
+    };
+    details.addEventListener('toggle', () => { if (details.open && !built) { built = true; buildPieces(); } });
+    details.append(summary, el('div', null, 'setBody'));
+    details.lastChild.append(info, pieces);
+    fragment.append(details);
   }
-  if(!sets.length)fragment.append(el('p','No sets match these filters.'));
+  if (!sets.length) fragment.append(el('p', 'No sets match these filters.'));
   $('results').replaceChildren(fragment);
-}
-$('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>20*1024*1024){$('status').textContent='Import rejected: file exceeds 20 MiB.';return;}load(await file.text());});
+}$('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>20*1024*1024){$('status').textContent='Import rejected: file exceeds 20 MiB.';return;}load(await file.text());});
 $('demo').addEventListener('click',()=>load(DEMO,true));
-for(const id of ['search','mode','type','group'])$(id).addEventListener(id==='search'?'input':'change',render);
+const SEARCH_DEBOUNCE_MS=150;let searchTimer;
+$('search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(render,SEARCH_DEBOUNCE_MS);});
+for(const id of ['mode','group','sort'])$(id).addEventListener('change',render);
+$('typeChips').addEventListener('click',e=>{const chip=e.target.closest('.chip');if(!chip)return;setTypeFilter(chip.dataset.value);render();});
+$('targetType').addEventListener('change',()=>{if(snapshot)renderTargets();});
 for(const [id,open] of [['expand',true],['collapse',false]])$(id).addEventListener('click',()=>document.querySelectorAll('details.set').forEach(d=>d.open=open));
 </script></body></html>

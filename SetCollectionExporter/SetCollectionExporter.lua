@@ -1,14 +1,19 @@
--- No filesystem access, networking, inventory changes, or Lua serialization here.
--- ESO persists this global using its own SavedVariables writer on reload/logout.
+-- Set Collection Exporter: reads your set collection and stores it in SavedVariables for dashboard.html.
+-- This file never writes to disk itself. ESO saves SetCollectionExporterSaved on /reloadui or logout.
+
+-- Names and settings you might want to change
 local ADDON = "SetCollectionExporter"
-local VERSION = "1.1.2"
+local VERSION = "1.2.0"
+local SCHEMA_VERSION = 2
+local PIECE_FIELD_SEPARATOR = "|"
 local SCAN_UPDATE = ADDON .. "Scan"
 local BUTTON_UPDATE = ADDON .. "ButtonInit"
-local SCAN_INTERVAL_MS = 20
-local SETS_PER_BATCH = 8
-local BUTTON_RETRY_MS = 500
-local MAX_COLLECTION_SETS = 10000
+local SCAN_INTERVAL_MS = 20       -- pause between scan batches
+local SETS_PER_BATCH = 8          -- sets read per batch; lower it if the game stutters during a scan
+local BUTTON_RETRY_MS = 500       -- how often to look for the Set Items panel until it exists
+local MAX_COLLECTION_SETS = 10000 -- stop if the set list never ends
 
+-- ESO functions the scan needs. If any is missing, /setexport stops and says which one.
 local REQUIRED_APIS = {
     "GetNextItemSetCollectionId",
     "GetNumItemSetCollectionPieces",
@@ -27,10 +32,10 @@ local REQUIRED_APIS = {
     "GetSmithingResearchLineTraitInfo",
 }
 
--- Runtime state
+-- True while a scan is running, so a second one can't start
 local isScanning = false
 
--- Text and optional library helpers
+-- Small helpers: chat messages, text cleanup, and safe calls into LibSets (optional)
 
 local function printMessage(message)
     d("[Set Export] " .. tostring(message))
@@ -53,8 +58,9 @@ local function callLibSets(name, ...)
     return nil
 end
 
--- Set metadata and collection data
+-- Set info: type (dungeon, trial, other, crafted), source and bonuses
 
+-- Works out a set's type and where it comes from. LibSets gives better answers when it's installed.
 local function getSetMetadata(id)
     local category, names, seen = GetItemSetCollectionCategoryId(id), {}, {}
     while category and category ~= 0 and not seen[category] do
@@ -102,12 +108,17 @@ local function collectSetBonuses(id)
     local _, _, count = GetItemSetInfo(id)
     for i = 1, count or 0 do
         local required, description = GetItemSetBonusInfo(id, i)
-        result[#result + 1] = "(" .. tostring(required) .. ") " .. cleanText(description)
+        local text = cleanText(description)
+        -- ESO's own text often starts with "(2 items)" already; only add the count when it doesn't.
+        if text:sub(1, 1) ~= "(" then
+            text = "(" .. tostring(required) .. ") " .. text
+        end
+        result[#result + 1] = text
     end
     return result
 end
 
--- Research belongs to the currently logged-in character.
+-- Trait research for the character you're logged in as
 
 local function collectResearch()
     local result = {}
@@ -141,7 +152,23 @@ local function collectResearch()
     return result
 end
 
-local function collectSet(id)
+-- Saves the in-game name for an armor/weapon/slot type once per export instead of once per piece.
+local function recordLabel(labels, prefix, value)
+    if labels[value] == nil then
+        labels[value] = cleanText(GetString(prefix, value))
+    end
+end
+
+-- Each piece is saved as one short string to keep the file small:
+-- "pieceId|unlocked(0 or 1)|armorType|weaponType|equipType|name". dashboard.html reads this format.
+local function encodePiece(pieceId, unlocked, armorType, weaponType, equipType, name)
+    return table.concat({
+        pieceId, unlocked and 1 or 0, armorType, weaponType, equipType, name,
+    }, PIECE_FIELD_SEPARATOR)
+end
+
+-- Reads one set and all its pieces. Returns the set, its piece count and how many are unlocked.
+local function collectSet(id, labels)
     local kind, source, confidence = getSetMetadata(id)
     local set = {
         id = id,
@@ -152,9 +179,8 @@ local function collectSet(id)
         classification = confidence,
         pieces = {},
         bonuses = collectSetBonuses(id),
-        unlocked = 0,
-        total = 0,
     }
+    local unlockedCount = 0
     local count = GetNumItemSetCollectionPieces(id)
     for index = 1, count do
         local pieceId, slot = GetItemSetCollectionPieceInfo(id, index)
@@ -163,29 +189,19 @@ local function collectSet(id)
         local armorType = GetItemLinkArmorType(link)
         local weaponType = GetItemLinkWeaponType(link)
         local equipType = GetItemLinkEquipType(link)
-        set.pieces[#set.pieces + 1] = {
-            id = pieceId,
-            slot = tostring(slot),
-            name = cleanText(GetItemLinkName(link)),
-            armorLabel = cleanText(GetString("SI_ARMORTYPE", armorType)),
-            weaponLabel = cleanText(GetString("SI_WEAPONTYPE", weaponType)),
-            equipLabel = cleanText(GetString("SI_EQUIPTYPE", equipType)),
-            unlocked = unlocked,
-            owned = "not scanned",
-            armorType = armorType,
-            weaponType = weaponType,
-            equipType = equipType,
-        }
+        recordLabel(labels.armor, "SI_ARMORTYPE", armorType)
+        recordLabel(labels.weapon, "SI_WEAPONTYPE", weaponType)
+        recordLabel(labels.equip, "SI_EQUIPTYPE", equipType)
+        set.pieces[#set.pieces + 1] = encodePiece(
+            pieceId, unlocked, armorType, weaponType, equipType, cleanText(GetItemLinkName(link)))
         if unlocked then
-            set.unlocked = set.unlocked + 1
+            unlockedCount = unlockedCount + 1
         end
     end
-    set.total = #set.pieces
-    set.percent = set.total > 0 and 100 * set.unlocked / set.total or 0
-    return set
+    return set, count, unlockedCount
 end
 
--- Crafted sets are separate from sticker-book completion.
+-- Crafted sets are listed on their own and don't count toward sticker-book totals
 
 local function collectCraftedSets(snapshot)
     local crafted = callLibSets("GetSetTypeSetsData", LIBSETS_SETTYPE_CRAFTED)
@@ -230,14 +246,12 @@ local function collectCraftedSets(snapshot)
 end
 
 
--- SavedVariables are changed only after the full scan succeeds.
+-- Saving: only runs after a scan finishes, so a failed scan keeps the last good export
 
 local function commitSnapshot(snapshot)
     snapshot.percent = snapshot.total > 0 and 100 * snapshot.unlocked / snapshot.total or 0
-    -- Commit only after the entire scan succeeds. Last good export survives errors.
     SetCollectionExporterSaved = SetCollectionExporterSaved or {}
-    -- Remove v1.1.0's duplicated character snapshots when committing.
-    -- Merely stopping new snapshots would leave the oversized data on disk.
+    -- Older versions saved a copy per character. Clear it so it doesn't stay in the file.
     SetCollectionExporterSaved.characters = nil
     SetCollectionExporterSaved.latest = snapshot
     EVENT_MANAGER:UnregisterForUpdate(SCAN_UPDATE)
@@ -246,8 +260,9 @@ local function commitSnapshot(snapshot)
 end
 
 
--- Export orchestration: validate, enumerate, then process scheduled batches.
+-- The export itself: check the game has what we need, list the sets, then read them in small batches
 
+-- Runs from /setexport and the Export button.
 local function startExport()
     if isScanning then
         printMessage("Scan already running.")
@@ -263,7 +278,8 @@ local function startExport()
 
     isScanning = true
     local snapshot = {
-        schemaVersion = 1,
+        schemaVersion = SCHEMA_VERSION,
+        labels = { armor = {}, weapon = {}, equip = {} },
         timestamp = GetTimeStamp(),
         apiVersion = GetAPIVersion(),
         account = GetDisplayName(),
@@ -310,10 +326,10 @@ local function startExport()
                 if not id then
                     break
                 end
-                local set = collectSet(id)
+                local set, setTotal, setUnlocked = collectSet(id, snapshot.labels)
                 snapshot.sets[#snapshot.sets + 1] = set
-                snapshot.total = snapshot.total + set.total
-                snapshot.unlocked = snapshot.unlocked + set.unlocked
+                snapshot.total = snapshot.total + setTotal
+                snapshot.unlocked = snapshot.unlocked + setUnlocked
                 index = index + 1
             end
             if index > #ids then
@@ -329,7 +345,7 @@ local function startExport()
     end)
 end
 
--- Collections menu button and diagnostics
+-- The Export button in Collections > Set Items, and the /setexportstatus check
 
 local exportButton, buttonError
 
@@ -339,8 +355,8 @@ local function getSetItemsPanel()
 end
 
 local function attachExportButton()
-    -- A child of the actual panel inherits visibility, scale, and menu placement.
-    -- This does not depend on the optional ITEM_SETS_BOOK_SCENE global.
+    -- The button is a child of the Set Items panel, so it shows, hides and scales with it.
+    -- Size and position are set a few lines down (SetDimensions / SetAnchor).
     if exportButton then
         return true
     end
@@ -375,8 +391,7 @@ local function initializeButton()
         end
         return ok and attached
     end
-    -- The panel may be created after EVENT_ADD_ON_LOADED.
-    -- Keep waiting for it; stop polling as soon as its child button exists.
+    -- The panel can appear after the add-on loads, so keep checking until the button is attached.
     EVENT_MANAGER:RegisterForUpdate(BUTTON_UPDATE, BUTTON_RETRY_MS, attempt)
     attempt()
 end
@@ -394,7 +409,7 @@ local function printStatus()
     end
 end
 
--- Add-on initialization
+-- Startup: register the slash commands and add the button once the add-on has loaded
 
 EVENT_MANAGER:RegisterForEvent(ADDON, EVENT_ADD_ON_LOADED, function(_, name)
     if name ~= ADDON then
