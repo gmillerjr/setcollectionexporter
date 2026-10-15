@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>ESO · Set Collection</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#101720;color:#e4eaf1}body{max-width:1250px;margin:auto;padding:32px}h1{font:36px Georgia,serif;margin:8px 0}h2{font-size:22px}p{color:#acb9c9}header{border-bottom:1px solid #34404f;padding-bottom:24px}.eyebrow{letter-spacing:.18em;font-size:12px;color:#d9b875}.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:22px 0}button,.file,select,input{background:#1d2a3a;color:#edf3fa;border:1px solid #536378;border-radius:6px;padding:10px;font:inherit}button,.file,summary{cursor:pointer}input[type=file]{max-width:320px}.tools label{display:flex;flex-direction:column;font-size:12px;gap:4px}input[type=search]{min-width:260px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin:25px 0}.card{padding:20px;background:#1b2634;border:1px solid #354256;border-radius:8px}.big{font-size:30px;color:#e5c88d}.muted{color:#acb9c9;font-size:14px}.error{color:#ffb8b8}#status{white-space:pre-wrap}details.set{border:1px solid #344256;border-radius:7px;margin:10px 0;background:#182331}summary{padding:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.name{font-weight:650;flex:1;min-width:210px}.badge{padding:3px 9px;border-radius:15px;background:#2a3e52;font-size:12px}.progress{width:110px;accent-color:#d4b575}a{color:#e8c98d}a:focus,button:focus,summary:focus{outline:2px solid #e8c98d;outline-offset:4px}.pieces{padding:0 20px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:8px}.piece{padding:10px;background:#101b28;border-radius:4px}.yes{color:#9cdbb8}.no{color:#f4b3a3}.bonus{margin:0 20px 15px;color:#becddd;white-space:pre-line}.link{margin:0 20px 15px;display:inline-block}#empty{padding:35px;border:1px dashed #536378;border-radius:8px}footer{margin-top:30px;border-top:1px solid #34404f;padding-top:15px;font-size:13px;color:#a6b4c5}#results{min-height:120px}#researchPanel{padding:15px;background:#182331}#researchPanel table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #34404f;padding:9px}#researchPanel{overflow:auto}@media(max-width:600px){body{padding:16px}h1{font-size:28px}.progress{width:80px}}@media(prefers-reduced-motion:no-preference){button:hover{background:#304159}}
+.tools input,.tools select,.tools button{box-sizing:border-box;height:46px;font-size:16px}
+</style></head><body>
+<header><div class="eyebrow">THE ELDER SCROLLS ONLINE · ACCOUNT COLLECTION</div><h1>Your next missing piece.</h1><p>Explore your sticker book, plan a dungeon run, and check character trait research.</p>
+<label class="file">Import ESO SavedVariables <input id="file" type="file" accept=".lua,text/plain"></label> <button id="demo">Try sample export</button>
+<p class="muted">Open locally. Your file stays in this browser tab. Export in ESO with /setexport, wait for “Ready”, then /reloadui or log out.</p></header>
+<div id="status" role="status" aria-live="polite">Import SetCollectionExporter.lua to begin, or try the sample.</div>
+<div id="cards" class="cards"></div>
+<div class="tools"><label>Search sets / sources<input id="search" type="search" placeholder="Set name, dungeon, trial…"></label>
+<label>Show<select id="mode"><option value="all">All Sets</option><option value="sets">Missing Sets Only</option><option value="pieces">Missing Pieces Only</option></select></label>
+<label>Type<select id="type"><option value="all">All types</option><option value="dungeon">Dungeon</option><option value="trial">Trial</option><option value="other">Other</option><option value="crafted">Crafted / research</option></select></label>
+<label>Group by<select id="group"><option value="name">Set name</option><option value="source">Source / dungeon / trial</option><option value="type">Dungeon / trial / other / crafted</option></select></label>
+<button id="expand">Expand visible</button><button id="collapse">Collapse visible</button></div>
+<p id="count" class="muted"></p><main id="results"><p id="empty">Your collection will appear here.</p></main>
+<details id="researchPanel"><summary>Character research · eligibility by piece</summary><p>Known traits are character specific. A set requires its minimum trait count on each individual item research line. Eligibility below checks research only; materials, style, station access and crafting passives still apply.</p><div id="research"></div></details>
+<footer>Unlocked = permanently recorded in the account sticker book on this server. Physical ownership is not scanned. Crafted sets have no sticker-book completion percentage. Hover or expand a set for exported bonuses; ESO-Hub links require internet and open only when clicked.</footer>
+<script>
+/* Data-only subset of Lua 5.1 SavedVariables. Never evaluates input. */
+function parseSavedVariables(source) {
+  if (source.length > 20 * 1024 * 1024) throw Error('File exceeds 20 MiB limit.');
+  let p = 0, nodes = 0;
+  const fail = m => { throw Error(`${m} at character ${p}`); };
+  const longOpen = () => /^\[(=*)\[/.exec(source.slice(p));
+  function longString() {
+    const m = longOpen(); p += m[0].length;
+    const close = ']' + m[1] + ']', end = source.indexOf(close, p);
+    if (end < 0) fail('Unterminated long string');
+    let value = source.slice(p, end); p = end + close.length;
+    return value.replace(/^\r?\n/, '');
+  }
+  function skip() {
+    while (p < source.length) {
+      if (/\s|\uFEFF/.test(source[p])) { p++; continue; }
+      if (source.slice(p, p + 2) === '--') {
+        p += 2;
+        if (longOpen()) longString();
+        else { while (p < source.length && source[p] !== '\n') p++; }
+        continue;
+      }
+      break;
+    }
+  }
+  function take(c) { skip(); if (source[p] !== c) fail(`Expected ${c}`); p++; }
+  function ident() {
+    skip(); const m = /^[A-Za-z_][A-Za-z_0-9]*/.exec(source.slice(p));
+    if (!m) fail('Expected identifier'); p += m[0].length; return m[0];
+  }
+  function string() {
+    if (longOpen()) return longString();
+    const q = source[p++]; let result = '';
+    while (p < source.length) {
+      const c = source[p++];
+      if (c === q) return result;
+      if (c === '\n' || c === '\r') fail('Unescaped newline');
+      if (c !== '\\') { result += c; continue; }
+      if (p >= source.length) fail('Unterminated escape');
+      const e = source[p++], escapes = {a:'\x07', b:'\b', f:'\f', n:'\n', r:'\r', t:'\t', v:'\v', '\\':'\\', '"':'"', "'":"'"};
+      if (Object.hasOwn(escapes, e)) result += escapes[e];
+      else if (/[0-9]/.test(e)) {
+        let digits = e;
+        for (let i = 0; i < 2 && /[0-9]/.test(source[p] || 'x'); i++) digits += source[p++];
+        if (+digits > 255) fail('Invalid decimal byte escape');
+        result += String.fromCharCode(+digits);
+      } else if (e === '\n') result += '\n';
+      else if (e === '\r') { if (source[p] === '\n') p++; result += '\n'; }
+      else fail('Unsupported string escape');
+    }
+    fail('Unterminated string');
+  }
+  function value(depth) {
+    if (++nodes > 600000 || depth > 80) fail('Parser complexity limit exceeded');
+    skip(); const c = source[p];
+    if (c === '"' || c === "'" || longOpen()) return string();
+    if (c === '{') {
+      p++; const result = Object.create(null); let implicit = 1;
+      while (true) {
+        skip(); if (source[p] === '}') { p++; return result; }
+        let key, v;
+        if (source[p] === '[' && !longOpen()) {
+          p++; key = value(depth + 1);
+          if (!(typeof key === 'string' || typeof key === 'number')) fail('Invalid table key');
+          take(']'); take('='); v = value(depth + 1);
+        } else {
+          const field = /^[A-Za-z_][A-Za-z_0-9]*\s*=/.exec(source.slice(p));
+          if (field) { key = ident(); take('='); v = value(depth + 1); }
+          else { key = implicit++; v = value(depth + 1); }
+        }
+        key = String(key);
+        if (['__proto__', 'prototype', 'constructor'].includes(key)) fail('Forbidden table key');
+        if (Object.hasOwn(result, key)) fail('Duplicate table key');
+        result[key] = v;
+        skip(); if (source[p] === ',' || source[p] === ';') p++;
+        else if (source[p] !== '}') fail('Expected table separator');
+      }
+    }
+    const number = /^-?(?:0[xX][0-9a-fA-F]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/.exec(source.slice(p));
+    if (number) {
+      p += number[0].length; const n = Number(number[0]);
+      if (!Number.isFinite(n)) fail('Invalid number'); return n;
+    }
+    const id = ident();
+    if (id === 'true') return true;
+    if (id === 'false') return false;
+    if (id === 'nil') return null;
+    fail('Executable Lua and variable references are not allowed');
+  }
+  const root = Object.create(null);
+  skip();
+  while (p < source.length) {
+    const name = ident();
+    if (Object.hasOwn(root, name)) fail('Duplicate global assignment');
+    take('='); root[name] = value(0); skip(); if (source[p] === ';') p++; skip();
+  }
+  return root;
+}
+function tableValues(t) {
+  if (!t || typeof t !== 'object') throw Error('Expected a Lua table');
+  return Object.keys(t).sort((a,b) => Number(a)-Number(b)).map(k => t[k]);
+}
+function validateSnapshot(root) {
+  const s = root?.SetCollectionExporterSaved?.latest;
+  if (!s || s.schemaVersion !== 1) throw Error('No supported SetCollectionExporterSaved.latest snapshot (schema 1) found.');
+  const text = (v, label) => { if (typeof v !== 'string' || v.length > 30000) throw Error('Invalid ' + label); return v; };
+  const integer = v => { if (!Number.isSafeInteger(v) || v < 0) throw Error('Invalid nonnegative integer'); return v; };
+  s.sets = tableValues(s.sets); s.craftedSets = tableValues(s.craftedSets); s.research = tableValues(s.research);
+  s.warnings = tableValues(s.warnings).map(v => text(v, 'warning'));
+  if (s.sets.length + s.craftedSets.length > 10000 || s.research.length > 1000) throw Error('Too many records');
+  for (const name of ['account','world','character']) text(s[name], name);
+  if (s.characterId != null) text(s.characterId, 'character ID');
+  integer(s.timestamp); integer(s.apiVersion);
+  const seen = new Set(); let total = 0, unlocked = 0;
+  for (const set of [...s.sets, ...s.craftedSets]) {
+    integer(set.id); if (seen.has(set.id)) throw Error('Duplicate set ID'); seen.add(set.id);
+    text(set.name, 'set name'); text(set.source, 'source');
+    if (set.hubName != null) text(set.hubName, 'ESO-Hub name');
+    if (!['other','dungeon','trial','crafted'].includes(set.type)) throw Error('Invalid set type');
+    set.bonuses = tableValues(set.bonuses).map(b => text(b, 'bonus'));
+    if (set.bonuses.length > 50) throw Error('Too many bonuses');
+  }
+  for (const set of s.sets) {
+    set.pieces = tableValues(set.pieces);
+    if (set.pieces.length > 1000) throw Error('Too many pieces');
+    const pieces = new Set();
+    for (const piece of set.pieces) {
+      integer(piece.id); if (pieces.has(piece.id)) throw Error('Duplicate piece ID'); pieces.add(piece.id);
+      text(piece.name, 'piece name');
+      for (const label of ['armorLabel','weaponLabel','equipLabel']) if (piece[label] != null) text(piece[label], label);
+      if (typeof piece.unlocked !== 'boolean') throw Error('Invalid unlock flag');
+    }
+    set.total = set.pieces.length; set.unlocked = set.pieces.filter(p => p.unlocked).length;
+    total += set.total; unlocked += set.unlocked;
+  }
+  for (const set of s.craftedSets) {
+    if (set.traitsNeeded != null && (!Number.isInteger(set.traitsNeeded) || set.traitsNeeded < 1 || set.traitsNeeded > 9)) throw Error('Invalid trait requirement');
+  }
+  for (const r of s.research) {
+    text(r.name, 'research line'); integer(r.craft); integer(r.line); integer(r.known); integer(r.total);
+    if (r.craftName != null) text(r.craftName, 'craft name');
+    if (r.known > r.total || r.total > 9) throw Error('Invalid research count');
+  }
+  s.total = total; s.unlocked = unlocked;
+  return s;
+}
+if (typeof module !== 'undefined') module.exports = {parseSavedVariables, validateSnapshot};
+
+const DEMO = "-- Synthetic sample; NOT an actual player export.\nSetCollectionExporterSaved =\n{\n    [\"latest\"] =\n    {\n        [\"schemaVersion\"] = 1,\n        [\"timestamp\"] = 1792011600,\n        [\"apiVersion\"] = 101051,\n        [\"account\"] = \"@SampleAccount\",\n        [\"world\"] = \"NA Megaserver\",\n        [\"character\"] = \"Sample Crafter\",\n        [\"characterId\"] = \"12345678901234567\",\n        [\"warnings\"] = {\"Synthetic demonstration data; set IDs and pieces are illustrative.\"},\n        [\"sets\"] =\n        {\n            [1] = { id = 10001, name = \"Dungeon Sample\", type = \"dungeon\", source = \"Sample Dungeon\", classification = \"native\",\n                bonuses = {\"(2) Adds sample recovery\", \"(5) Sample bonus, exported as plain text.\"},\n                pieces = {\n                    {id = 201, name = \"Light Head\", unlocked = true},\n                    {id = 202, name = \"Medium Head\", unlocked = false},\n                    {id = 203, name = \"Heavy Head\", unlocked = false},\n                },\n            },\n            [2] = {id = 10002, name = \"Trial Sample\", type = \"trial\", source = \"Sample Trial\", classification = \"LibSets\",\n                bonuses = {\"(2) Sample trial bonus\"}, pieces = {{id = 204, name = \"Restoration Staff\", unlocked = true}},\n            },\n            [3] = {id = 10003, name = \"Other Sample\", type = \"other\", source = \"Sample Zone\",\n                bonuses = {}, pieces = {{id = 205, name = \"Shield\", unlocked = false}},\n            },\n        },\n        [\"craftedSets\"] = {\n            {id = 10004, name = \"Crafted Sample\", type = \"crafted\", source = \"Sample Workshop\", traitsNeeded = 6,\n                bonuses = {\"(5) Sample crafted bonus\"}},\n            {id = 10005, name = \"Unknown Requirement Sample\", type = \"crafted\", source = \"Unknown\", bonuses = {}},\n        },\n        [\"research\"] = {\n            {craft = 1, line = 1, name = \"Axes\", known = 6, total = 9},\n            {craft = 2, line = 1, name = \"Robes\", known = 4, total = 9},\n            {craft = 7, line = 1, name = \"Rings\", known = 9, total = 9},\n        },\n    },\n}\n";
+const $ = id => document.getElementById(id);
+let snapshot = null;
+function el(tag, text, cls) { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; }
+function pct(a,b) { return b ? (a*100/b).toFixed(1)+'%' : '—'; }
+function equipmentLabel(label, piece = {}) {
+  if (typeof label !== 'string') return '';
+  const slot = label.trim().toLowerCase();
+  const weight = (piece.armorLabel || '').trim().toLowerCase().split(' ')[0];
+  const armorNames = {
+    light: {head:'Hat', shoulders:'Epaulets', hands:'Gloves', waist:'Sash', legs:'Breeches', feet:'Shoes'},
+    medium: {head:'Helmet', chest:'Jack', shoulders:'Arm Cops', hands:'Bracers', waist:'Belt', legs:'Guards', feet:'Boots'},
+    heavy: {head:'Helm', chest:'Cuirass', shoulders:'Pauldrons', hands:'Gauntlets', waist:'Girdle', legs:'Greaves', feet:'Sabatons'}
+  };
+  // Light chest can be a robe or jerkin: retain the actual exported item name.
+  if (armorNames[weight]?.[slot]) return armorNames[weight][slot];
+  const fullNames = {neck:'Necklace', feet:'Footwear'};
+  return fullNames[slot] || label;
+}
+function pieceName(piece) {
+  const genericSlots = ['head','chest','shoulders','hands','waist','legs','feet','neck'];
+  return genericSlots.includes(piece.name.trim().toLowerCase()) ? equipmentLabel(piece.name, piece) : piece.name;
+}
+function load(text, demo = false) {
+  try {
+    const next = validateSnapshot(parseSavedVariables(text)); snapshot = next;
+    $('status').className = '';
+    $('status').textContent = `${demo ? 'SAMPLE DATA · ' : ''}${next.account} · ${next.world} · ${next.character} · ${new Date(next.timestamp*1000).toLocaleString()} · API ${next.apiVersion}` + (next.warnings.length ? '\n'+next.warnings.join('\n') : '');
+    $('cards').replaceChildren();
+    const complete = next.sets.filter(s => s.total > 0 && s.total === s.unlocked).length;
+    for (const [value,label] of [[pct(next.unlocked,next.total),'Collection unlocked'],[`${next.unlocked} / ${next.total}`,'Individual pieces unlocked'],[next.total-next.unlocked,'Missing pieces'],[`${complete} / ${next.sets.length}`,'Complete sticker-book sets']]) {
+      const card = el('div',null,'card');card.append(el('div',value,'big'),el('div',label,'muted'));$('cards').append(card);
+    }
+    render(); renderResearch();
+  } catch (e) { $('status').className = 'error'; $('status').textContent = 'Import rejected: '+e.message+(snapshot ? '\nPrevious valid collection remains displayed.' : ''); }
+}
+function renderResearch() {
+  const table = el('table'), head = el('tr');
+  for (const t of ['Craft / research line','Known traits','Research thresholds met']) head.append(el('th',t));table.append(head);
+  for (const r of snapshot.research) { const row=el('tr');row.append(el('td',`${r.craftName||r.craft} · ${r.name}`),el('td',`${r.known}/${r.total}`),el('td',Array.from({length:8},(_,i)=>i+2).filter(n=>n<=r.known).join(', ') || 'None (2–9 traits)'));table.append(row); }
+  $('research').replaceChildren(table);
+}
+function render() {
+  if (!snapshot) return;
+  const query=$('search').value.toLocaleLowerCase(), type=$('type').value, mode=$('mode').value, group=$('group').value;
+  const sets=[...snapshot.sets,...snapshot.craftedSets].filter(s =>
+    (type==='all'||s.type===type) && (s.name+' '+s.source).toLocaleLowerCase().includes(query) &&
+    (mode==='all'||(s.type!=='crafted'&&s.unlocked<s.total)));
+  const key=s=>group==='source'?s.source:group==='type'?s.type:'';
+  sets.sort((a,b)=>key(a).localeCompare(key(b))||a.name.localeCompare(b.name));
+  $('count').textContent=`${sets.length} sets shown · summary above always covers the full imported sticker book. Missing Sets means any incomplete set. Missing filters exclude crafted sets.`;
+  const fragment=document.createDocumentFragment(); let prev=null;
+  for (const s of sets) {
+    const k=key(s);if(k!==prev&&k){fragment.append(el('h2',k));}prev=k;
+    const details=el('details',null,'set'), summary=el('summary');
+    summary.title=s.bonuses.join('\n')||'No bonuses available in this export.';
+    summary.append(el('span',s.name,'name'),el('span',s.type,'badge'));
+    if(s.type==='crafted') summary.append(el('span',s.traitsNeeded?`${s.traitsNeeded} traits required`:'Trait requirement unknown','muted'));
+    else {summary.append(el('span',`${s.unlocked}/${s.total} · ${pct(s.unlocked,s.total)}`));const progress=el('progress',null,'progress');progress.max=s.total||1;progress.value=s.unlocked;progress.setAttribute('aria-label',s.name+' unlocked pieces');summary.append(progress);}
+    details.append(summary,el('div',s.source,'bonus'));
+    if(s.classification) details.append(el('div','Classification: '+s.classification,'bonus muted'));
+    const link=el('a','View on ESO-Hub ↗','link');
+    // Safe fixed origin; English LibSets name is preferred when available.
+    const name=s.hubName||s.name;
+    const slug=name.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    link.href='https://eso-hub.com/en/sets/'+encodeURIComponent(slug);link.target='_blank';link.rel='noopener noreferrer';details.append(link);
+    details.append(el('div',s.bonuses.join('\n')||'Bonuses unavailable.','bonus'));
+    const pieces=el('div',null,'pieces');
+    if(s.type==='crafted') {
+      if(!s.traitsNeeded) pieces.append(el('p','Eligibility unknown. Install/update LibSets, export again, and re-import.'));
+      else for(const r of snapshot.research) pieces.append(el('div',`${r.craftName||r.craft} · ${r.name} · ${r.known}/${s.traitsNeeded} traits · ${r.known>=s.traitsNeeded?'Research eligible':'More research needed'}`,'piece '+(r.known>=s.traitsNeeded?'yes':'no')));
+    } else for(const p of s.pieces) {
+      if(mode==='pieces'&&p.unlocked)continue;
+      const piece=el('div',null,'piece');piece.append(el('div',(p.unlocked?'✓ Unlocked · ':'○ Missing · ')+pieceName(p),p.unlocked?'yes':'no'),el('div',[p.armorType>0?p.armorLabel:'',p.weaponType>0?p.weaponLabel:'',equipmentLabel(p.equipLabel,p)].filter(Boolean).join(' · '),'muted'));pieces.append(piece);
+    }
+    details.append(pieces);fragment.append(details);
+  }
+  if(!sets.length)fragment.append(el('p','No sets match these filters.'));
+  $('results').replaceChildren(fragment);
+}
+$('file').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;if(file.size>20*1024*1024){$('status').textContent='Import rejected: file exceeds 20 MiB.';return;}load(await file.text());});
+$('demo').addEventListener('click',()=>load(DEMO,true));
+for(const id of ['search','mode','type','group'])$(id).addEventListener(id==='search'?'input':'change',render);
+for(const [id,open] of [['expand',true],['collapse',false]])$(id).addEventListener('click',()=>document.querySelectorAll('details.set').forEach(d=>d.open=open));
+</script></body></html>
