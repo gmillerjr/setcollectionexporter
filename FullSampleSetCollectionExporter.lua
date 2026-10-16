@@ -2,7 +2,7 @@ SetCollectionExporterSaved =
 {
     ["latest"] = 
     {
-        ["character"] = "mugnin",
+        ["character"] = "Johnny ESO",
         ["labels"] = 
         {
             ["equip"] = 
@@ -23930,7 +23930,7 @@ SetCollectionExporterSaved =
         },
         ["total"] = 10705,
         ["percent"] = 16.2354040168,
-        ["characterId"] = "8796093037645515",
-        ["account"] = "@hugnin",
+        ["characterId"] = "42",
+        ["account"] = "@ESOGuy",
     },
 }
