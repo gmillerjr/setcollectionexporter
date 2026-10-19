@@ -30,6 +30,7 @@ local REQUIRED_APIS = {
     "GetNumSmithingResearchLines",
     "GetSmithingResearchLineInfo",
     "GetSmithingResearchLineTraitInfo",
+	"GetSmithingResearchLineTraitTimes",
 }
 
 -- True while a scan is running, so a second one can't start
@@ -118,7 +119,7 @@ local function collectSetBonuses(id)
     return result
 end
 
--- Trait research for the character you're logged in as
+-- Trait research for the currently logged in toon
 
 local function collectResearch()
     local result = {}
@@ -133,12 +134,32 @@ local function collectResearch()
         for line = 1, GetNumSmithingResearchLines(craft) do
             local name, _, total = GetSmithingResearchLineInfo(craft, line)
             local known = 0
+            local traits = {}
+
             for trait = 1, total do
-                local _, _, learned = GetSmithingResearchLineTraitInfo(craft, line, trait)
+                local traitType, _, learned =
+                    GetSmithingResearchLineTraitInfo(craft, line, trait)
+
+                local _, remaining =
+                    GetSmithingResearchLineTraitTimes(craft, line, trait)
+
+                local status = "missing"
+
                 if learned then
+                    status = "researched"
                     known = known + 1
+                elseif remaining ~= nil then
+                    status = "researching"
                 end
+
+                traits[#traits + 1] = {
+                    id = traitType,
+                    name = cleanText(GetString("SI_ITEMTRAITTYPE", traitType)),
+                    status = status,
+                    remaining = remaining,
+                }
             end
+
             result[#result + 1] = {
                 craft = craft,
                 craftName = cleanText(GetString("SI_TRADESKILLTYPE", craft)),
@@ -146,11 +167,15 @@ local function collectResearch()
                 name = cleanText(name),
                 known = known,
                 total = total,
+                traits = traits,
             }
         end
     end
+
     return result
 end
+
+
 
 -- Saves the in-game name for an armor/weapon/slot type once per export instead of once per piece.
 local function recordLabel(labels, prefix, value)
@@ -159,7 +184,6 @@ local function recordLabel(labels, prefix, value)
     end
 end
 
--- Each piece is saved as one short string to keep the file small:
 -- "pieceId|unlocked(0 or 1)|armorType|weaponType|equipType|name". dashboard.html reads this format.
 local function encodePiece(pieceId, unlocked, armorType, weaponType, equipType, name)
     return table.concat({
@@ -260,7 +284,7 @@ local function commitSnapshot(snapshot)
 end
 
 
--- The export itself: check the game has what we need, list the sets, then read them in small batches
+-- this exports the sets to the file
 
 -- Runs from /setexport and the Export button.
 local function startExport()
@@ -345,7 +369,7 @@ local function startExport()
     end)
 end
 
--- The Export button in Collections > Set Items, and the /setexportstatus check
+-- The Export button in Collections Set Items, and the /setexportstatus check
 
 local exportButton, buttonError
 
@@ -355,7 +379,6 @@ local function getSetItemsPanel()
 end
 
 local function attachExportButton()
-    -- The button is a child of the Set Items panel, so it shows, hides and scales with it.
     -- Size and position are set a few lines down (SetDimensions / SetAnchor).
     if exportButton then
         return true
@@ -391,7 +414,7 @@ local function initializeButton()
         end
         return ok and attached
     end
-    -- The panel can appear after the add-on loads, so keep checking until the button is attached.
+    -- check to make sure th button loads
     EVENT_MANAGER:RegisterForUpdate(BUTTON_UPDATE, BUTTON_RETRY_MS, attempt)
     attempt()
 end
