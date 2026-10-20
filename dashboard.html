@@ -703,6 +703,53 @@ td, th {
   padding: 9px;
 }
 
+/* Research trait details */
+.researchDetails {
+  margin: 4px 0;
+}
+
+.researchDetails summary {
+  padding: 6px 0;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.traitList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 12px;
+}
+
+.traitTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-panel-deep);
+  font-size: 13px;
+}
+
+.traitTag.researched {
+  color: var(--color-unlocked);
+}
+
+.traitTag.researching {
+  color: var(--color-stat-buff);
+}
+
+.traitTag.missing {
+  color: var(--color-missing);
+}
+
+.researchHelp {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: 8px 0 14px;
+}
+
 footer {
   margin-top: 36px;
   border-top: 1px solid var(--color-border);
@@ -798,7 +845,7 @@ footer {
 </div>
 
 </main>
-<details id="targets" ><summary>Character research · eligibility by piece</summary><p>Known traits are character specific. A set requires its minimum trait count on each individual item research line. Eligibility below checks research only; materials, style, station access and crafting passives still apply.</p><div id="research"></div>
+<details id="researchpanel" ><summary>Character research · eligibility by piece</summary><p>Known traits are character specific. A set requires its minimum trait count on each individual item research line. Eligibility below checks research only; materials, style, station access and crafting passives still apply.</p><div id="research"></div>
 </details>
 </div>
 
@@ -988,11 +1035,60 @@ function validateSnapshot(root) {
   for (const set of s.craftedSets) {
     if (set.traitsNeeded != null && (!Number.isInteger(set.traitsNeeded) || set.traitsNeeded < 1 || set.traitsNeeded > 9)) throw Error('Invalid trait requirement');
   }
+
   for (const r of s.research) {
-    text(r.name, 'research line'); integer(r.craft); integer(r.line); integer(r.known); integer(r.total);
-    if (r.craftName != null) text(r.craftName, 'craft name');
-    if (r.known > r.total || r.total > 9) throw Error('Invalid research count');
+    text(r.name, 'research line');
+    integer(r.craft);
+    integer(r.line);
+    integer(r.known);
+    integer(r.total);
+
+    if (r.craftName != null) {
+      text(r.craftName, 'craft name');
+    }
+
+    if (r.known > r.total || r.total > 9) {
+      throw Error('Invalid research count');
+    }
+
+    if (r.traits != null) {
+      r.traits = tableValues(r.traits);
+
+      if (r.traits.length !== r.total) {
+        throw Error('Trait list does not match research total');
+      }
+
+      let researchedCount = 0;
+
+      for (const trait of r.traits) {
+        if (trait.id != null) integer(trait.id);
+        text(trait.name, 'trait name');
+
+        if (!['researched', 'researching', 'missing'].includes(trait.status)) {
+          throw Error('Invalid trait status');
+        }
+
+        if (trait.status === 'researched') {
+          researchedCount++;
+        }
+
+        if (trait.remaining != null) {
+          if (
+            typeof trait.remaining !== 'number' ||
+            !Number.isFinite(trait.remaining) ||
+            trait.remaining < 0
+          ) {
+            throw Error('Invalid research time');
+          }
+        }
+      }
+
+      if (researchedCount !== r.known) {
+        throw Error('Trait statuses do not match known count');
+      }
+    }
   }
+
   s.total = total; s.unlocked = unlocked;
   return s;
 }
@@ -1199,11 +1295,90 @@ function load(text, demo = false) {
   } catch (e) { $('status').className = 'error'; $('status').textContent = 'Import rejected: '+e.message+(snapshot ? '\nPrevious valid collection remains displayed.' : ''); }
 }
 // Crafting research and set bonuses
+
 function renderResearch() {
-  const table = el('table'), head = el('tr');
-  for (const t of ['Craft / research line','Known traits','Research thresholds met']) head.append(el('th',t));table.append(head);
-  for (const r of snapshot.research) { const row=el('tr');row.append(el('td',`${r.craftName||r.craft} · ${r.name}`),el('td',`${r.known}/${r.total}`),el('td',Array.from({length:8},(_,i)=>i+2).filter(n=>n<=r.known).join(', ') || 'None (2–9 traits)'));table.append(row); }
-  $('research').replaceChildren(table);
+  const table = el('table');
+  const head = el('tr');
+
+  for (const title of [
+    'Craft / research line',
+    'Known traits',
+    'Research thresholds met'
+  ]) {
+    head.append(el('th', title));
+  }
+
+  table.append(head);
+
+  for (const r of snapshot.research) {
+    const row = el('tr');
+    const nameCell = el('td');
+    const title = `${r.craftName || r.craft} · ${r.name}`;
+
+    if (r.traits && r.traits.length > 0) {
+      const details = el('details', null, 'researchDetails');
+      details.append(el('summary', title));
+
+      const list = el('div', null, 'traitList');
+
+      for (const trait of r.traits) {
+        const marker =
+          trait.status === 'researched' ? '✓' :
+          trait.status === 'researching' ? '◷' : '○';
+
+        const chip = el(
+          'span',
+          `${marker} ${trait.name}`,
+          `traitTag ${trait.status}`
+        );
+
+        const label =
+          trait.status === 'researched' ? 'Researched' :
+          trait.status === 'researching' ? 'Researching' :
+          'Not researched';
+
+        chip.title = `${trait.name}: ${label}`;
+
+        if (
+          trait.status === 'researching' &&
+          trait.remaining != null
+        ) {
+          const minutes = Math.ceil(trait.remaining / 60);
+          chip.title += ` (${minutes} minutes remaining at export)`;
+        }
+
+        list.append(chip);
+      }
+
+      details.append(list);
+      nameCell.append(details);
+    } else {
+      nameCell.textContent = title;
+    }
+
+    const thresholds = Array.from(
+      { length: 8 },
+      (_, i) => i + 2
+    ).filter(n => n <= r.known);
+
+    row.append(
+      nameCell,
+      el('td', `${r.known}/${r.total}`),
+      el('td', thresholds.join(', ') || 'None (2–9 traits)')
+    );
+
+    table.append(row);
+  }
+
+  const help = el(
+    'p',
+    'Expand a research line to see individual traits. ' +
+    'Green = researched, gold = researching, red = missing. ' +
+    'Older exports show counts only.',
+    'researchHelp'
+  );
+
+  $('research').replaceChildren(help, table);
 }
 
 function cleanBonus(text) { return text.replace(/^\(\d+\)\s*(?=\(\d+ items?\))/, ''); }

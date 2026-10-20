@@ -1,8 +1,8 @@
 ## Title: Item Set Collection Exporter
 ## Description: use /setexport or the export sets button in the item set list to export your collected sets.  you'll need to reload the ui or log out before the variable will save.
 ## Author: Greg Miller/Muaddib
-## Version: 1.2.0
-## AddOnVersion: 10200
+## Version: 1.5.0
+## AddOnVersion: 10500
 ## APIVersion: 101051
 ## SavedVariables: SetCollectionExporterSaved
 ## OptionalDependsOn: LibSets
